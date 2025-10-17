@@ -1,0 +1,770 @@
+{
+  "name": "Bernard Fulpaz",
+  "date": "2025-10-08",
+  "page": "",
+  "questions": [
+    {
+      "id": 1,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Python est un langage qui a été créé par Guido van Rossum en 1991. Guido van Rossum est souvent appelé le BDFL de Python. Que signifie BDFL ?",
+      "choices": [
+        {
+          "text": "Big Data Friendly Language",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "Bold Decision for Life",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "Best Data Format Language",
+          "mark": "circle",
+          "relative_position": "left",
+          "comment": "petit cercle bleu tracé dans/près du rond imprimé"
+        },
+        {
+          "text": "Basic Data Flow Language",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "Benevolent Dictator For Life",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "Built-in Data Function Library",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un cercle bleu clair visible uniquement à côté de « Best Data Format Language ». Aucune autre marque, rature ou soulignement n’est visible dans cette question."
+      }
+    },
+    {
+      "id": 2,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Que signifie REPL en Python ?",
+      "choices": [
+        {
+          "text": "Runtime Environment for Python Libraries, utilisé pour exécuter des modules Python",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "Resource Evaluation Processing Loop, principalement utilisé dans les systèmes embarqués",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "Read-Eval-Print Loop, utile pour tester rapidement des instructions Python",
+          "mark": "circle",
+          "relative_position": "left",
+          "comment": "cercle bleu tracé dans/près du rond imprimé"
+        },
+        {
+          "text": "Repetitive Execution Program Library, déconseillé pour les débutants",
+          "mark": "cross",
+          "relative_position": "right",
+          "comment": "gros gribouillage en forme de X couvrant la zone du rond imprimé et débordant sur le texte"
+        },
+        {
+          "text": "Real-time Execution Programming Language, utilisé pour les applications temps réel",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "Built-in Data Function Library",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un cercle bleu est visible sur la troisième proposition. Un marquage en X (traits croisés) est visible sur la quatrième proposition. Les autres propositions ne comportent pas de marque."
+      }
+    },
+    {
+      "id": 3,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Quel est le programme utilisé préférablement pour utiliser Python comme calculatrice en ligne de commande ?",
+      "choices": [
+        {
+          "text": "calc",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "ipython",
+          "mark": "tick",
+          "relative_position": "middle",
+          "comment": "petit signe ✓ bleu à gauche du texte"
+        },
+        {
+          "text": "jupyter",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "python",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "qpython",
+          "mark": "none",
+          "relative_position": "middle",
+          "comment": ""
+        },
+        {
+          "text": "notebook",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Une coche ✓ bleue se trouve à côté de « ipython ». Les autres options ne présentent pas de marques."
+      }
+    },
+    {
+      "id": 4,
+      "page": 2,
+      "kind": "fillin",
+      "question_text": "Inscrire après chaque syntaxe Python le type correspondant à l’expression.",
+      "choices": [
+        {
+          "text": "1. [1]",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": "liste"
+        },
+        {
+          "text": "2. {1}",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": "set"
+        },
+        {
+          "text": "3. (1:2)",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": "dictionaire"
+        },
+        {
+          "text": "4. (1, 2)",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": "stuple"
+        },
+        {
+          "text": "5. (i for i in range(3))",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": "comprehension generation ! (mots « for »/gribouillis visibles à gauche)"
+        },
+        {
+          "text": "6. 'abc'",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": "chaine de caractere (quelques mots additionnels peu lisibles à droite)"
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Des mots manuscrits bleus sont inscrits à droite de chaque élément: « liste », « set », « dictionaire », « stuple », « comprehension generation ! » (avec gribouillis « for »), et « chaine de caractere ». Pas de cases à cocher pour cette question."
+      }
+    },
+    {
+      "id": 5,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Quel est la sortie du code suivant \"12314231423225\".split(\"3\") ?",
+      "choices": [
+        {
+          "text": "['12314231421225']",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "['1', '2', '4', '2', '1', '2', '25']",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "(1,2,3,4,2,3,1,4,2,3,2,2,5)",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Segmentation fault",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "['12', '142', '142', '225']",
+          "mark": "circle",
+          "relative_position": "other",
+          "comment": "cercle bleu autour du rond imprimé"
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Seule la dernière proposition est entourée d’un cercle bleu. Les autres propositions n'ont aucune marque."
+      }
+    },
+    {
+      "id": 6,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Je souhaite importer la fonction sqrt sans polluer l’espace de nom courant de mon programme, quelle est la bonne commande ?",
+      "choices": [
+        {
+          "text": "import sqrt",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "using math.sqrt",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "from math import sqrt",
+          "mark": "cross",
+          "relative_position": "left",
+          "comment": "X bleu sur le rond imprimé avec un trait circulaire autour (marquage superposé)"
+        },
+        {
+          "text": "from math import *",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "from sqrt import math",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un marquage en X (avec un tracé circulaire superposé) est visible à côté de « from math import sqrt ». Les autres options ne présentent pas de marques."
+      }
+    },
+    {
+      "id": 7,
+      "page": 3,
+      "kind": "single",
+      "question_text": "Python est un langage à typage dynamique. Qu’est-ce que cela signifie ?",
+      "choices": [
+        {
+          "text": "Les variables doivent avoir un type spécifié avant utilisation",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Le type d’une variable est déterminé automatiquement au moment de l’exécution",
+          "mark": "circle",
+          "relative_position": "other",
+          "comment": "cercle bleu"
+        },
+        {
+          "text": "Python n’alloue que des variables de type entier",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Python utilise des types fixes comme dans C",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un cercle bleu est visible sur la deuxième proposition."
+      }
+    },
+    {
+      "id": 8,
+      "page": 3,
+      "kind": "open",
+      "question_text": "Les modèles de données en Python définissent des comportements spécifiques pour les objets. Quelle méthode spéciale est typiquement appelée à l’initialisation d’une instance de classe ?",
+      "choices": [],
+      "annotations": {
+        "text": "la methode speciale appelee a l'initialisation est init avec deux underscores devant et derriere",
+        "drawings": "",
+        "analysis": "Texte manuscrit en bleu courant sur la ligne de réponse; plusieurs mots soulignés. Pas de cases à cocher."
+      }
+    },
+    {
+      "id": 9,
+      "page": 3,
+      "kind": "fillin",
+      "question_text": "Quelles sont les deux méthodes spéciales utilisées pour obtenir un itérateur et l’utiliser ?",
+      "choices": [
+        {
+          "text": "1.",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": "next"
+        },
+        {
+          "text": "2.",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": "iter"
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Deux mots manuscrits bleus: « next » sur la première ligne et « iter » sur la deuxième. Pas d’underscores visibles."
+      }
+    },
+    {
+      "id": 10,
+      "page": 3,
+      "kind": "fillin",
+      "question_text": "Quels sont les noms souvent utilisés pour définir 1. les actions d’un objet et 2. les variables d’état d’un objet ?",
+      "choices": [
+        {
+          "text": "1.",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "2.",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "Écriture bleue peu lisible; plusieurs ratures.",
+        "drawings": "",
+        "analysis": "Sur la ligne 1, un mot manuscrit illisible est présent avec des traits de rature. Sur la ligne 2, un autre mot manuscrit illisible (« ... instance » perceptible) avec rature. Impossible de transcrire précisément."
+      }
+    },
+    {
+      "id": 11,
+      "page": 3,
+      "kind": "single",
+      "question_text": "Quelle est la meilleure définition de self en Python ?",
+      "choices": [
+        {
+          "text": "C’est un mot clé qui permet de définir une fonction",
+          "mark": "circle",
+          "relative_position": "other",
+          "comment": "cercle bleu"
+        },
+        {
+          "text": "C’est un mot clé qui permet de définir une variable",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "C’est un mot clé utilisé dans les décorateurs",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "C’est une convention pour référencer l’instance de la classe actuelle dans une méthode",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un cercle bleu est tracé à côté de la première proposition. Les autres propositions sont sans marques."
+      }
+    },
+    {
+      "id": 12,
+      "page": 3,
+      "kind": "single",
+      "question_text": "Le mot clé next est utilisé dans quel contexte en Python ?",
+      "choices": [
+        {
+          "text": "Pour sauter une itération dans une boucle for",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Pour obtenir le prochain élément d’un itérateur",
+          "mark": "circle",
+          "relative_position": "other",
+          "comment": "cercle bleu"
+        },
+        {
+          "text": "Pour obtenir le prochain élément d’un dictionnaire",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Pour arrêter une boucle for",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Cercle bleu visible sur la deuxième proposition."
+      }
+    },
+    {
+      "id": 13,
+      "page": 3,
+      "kind": "single",
+      "question_text": "Quelle est la valeur de x après l’exécution du code suivant ? u = {1: 20, 3: 40, 5: 60} x = len(u)",
+      "choices": [
+        {
+          "text": "20",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "4",
+          "mark": "circle",
+          "relative_position": "middle",
+          "comment": "cercle bleu"
+        },
+        {
+          "text": "6",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "60",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "3",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "5",
+          "mark": "none",
+          "relative_position": "middle",
+          "comment": ""
+        },
+        {
+          "text": "40",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un cercle bleu est visible à côté de « 4 ». Aucune autre marque."
+      }
+    },
+    {
+      "id": 14,
+      "page": 3,
+      "kind": "single",
+      "question_text": "Que sera affiché sur la sortie standard ? x = [1, 2, 3]; y = x; y.append(4); print(x)",
+      "choices": [
+        {
+          "text": "[3, 2, 1]",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "[1, 2, 3, 4, 4]",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "[1, 2, 3]",
+          "mark": "cross",
+          "relative_position": "left",
+          "comment": "petit X bleu sur le rond imprimé"
+        },
+        {
+          "text": "[1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3]",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "[1, 2, 3, 4]",
+          "mark": "circle",
+          "relative_position": "left",
+          "comment": "cercle bleu"
+        },
+        {
+          "text": "None",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un X bleu est visible à côté de « [1, 2, 3] ». Un cercle bleu entoure « [1, 2, 3, 4] »."
+      }
+    },
+    {
+      "id": 15,
+      "page": 4,
+      "kind": "open",
+      "question_text": "Quelle est la valeur affichée sur la sortie standard ? def foo(a, b=2, c=3): return a - b * c; result = foo(5, c=10); print(result)",
+      "choices": [],
+      "annotations": {
+        "text": "-1",
+        "drawings": "long trait horizontal dessiné sous l’énoncé",
+        "analysis": "Le nombre « -1 » est manuscrit à gauche de la zone de réponse; aucun choix multiple n’est présent."
+      }
+    },
+    {
+      "id": 16,
+      "page": 4,
+      "kind": "single",
+      "question_text": "Que voyez-vous sur la sortie standard ? u = [1, 2, 3, 4, 5]; print([n**2 for n in u if n % 2 == 0])",
+      "choices": [
+        {
+          "text": "[1, 4, 9, 16, 25]",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "[1, 2, 3, 4, 5]",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "[1, 9, 25]",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "[4, 16]",
+          "mark": "tick",
+          "relative_position": "right",
+          "comment": "coche ✓ bleue"
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Une coche ✓ bleue est présente à côté de « [4, 16] ». Les autres options ne sont pas marquées."
+      }
+    },
+    {
+      "id": 17,
+      "page": 4,
+      "kind": "multi",
+      "question_text": "À quoi sert le module pip en Python ?",
+      "choices": [
+        {
+          "text": "Compiler du code Python",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Gérer les dépendances et automatiser la création d’environnements virtuels pour Python",
+          "mark": "cross",
+          "relative_position": "other",
+          "comment": "X bleu dans/près du rond imprimé"
+        },
+        {
+          "text": "Installer des modules Python depuis le terminal",
+          "mark": "cross",
+          "relative_position": "other",
+          "comment": "X bleu dans/près du rond imprimé"
+        },
+        {
+          "text": "Optimiser les performances du code",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Relier la sortie standard d’un programme à un autre",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Deux marques en X bleues visibles sur les propositions 2 et 3. Les autres propositions ne comportent pas de marques."
+      }
+    },
+    {
+      "id": 18,
+      "page": 4,
+      "kind": "single",
+      "question_text": "Quel est le type de **kwargs dans la signature d’une fonction Python ?",
+      "choices": [
+        {
+          "text": "Une liste",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "Un set",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": ""
+        },
+        {
+          "text": "Un dictionnaire",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": ""
+        },
+        {
+          "text": "Un tuple",
+          "mark": "circle",
+          "relative_position": "right",
+          "comment": "cercle bleu"
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Cercle bleu à côté de « Un tuple ». Pas d’autres marques."
+      }
+    },
+    {
+      "id": 19,
+      "page": 4,
+      "kind": "multi",
+      "question_text": "Quelle est la différence principale entre une liste et un tuple en Python ?",
+      "choices": [
+        {
+          "text": "Une liste est immuable, un tuple est mutable",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Un tuple est immuable, une liste est mutable",
+          "mark": "circle",
+          "relative_position": "other",
+          "comment": "cercle bleu"
+        },
+        {
+          "text": "Une liste peut contenir des types différents, un tuple ne peut contenir qu’un seul type",
+          "mark": "circle",
+          "relative_position": "other",
+          "comment": "cercle bleu"
+        },
+        {
+          "text": "Un tuple peut contenir des types différents, une liste ne peut contenir qu’un seul type",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Deux cercles bleus visibles sur les propositions 2 et 3."
+      }
+    },
+    {
+      "id": 20,
+      "page": 4,
+      "kind": "single",
+      "question_text": "Quel est l’intérêt principal d’utiliser des environnements virtuels en Python ?",
+      "choices": [
+        {
+          "text": "Améliorer les performances d’exécution des scripts Python",
+          "mark": "cross",
+          "relative_position": "other",
+          "comment": "marque bleue en forme de boucle/trait appuyé à côté du rond"
+        },
+        {
+          "text": "Isoler les dépendances de projets Python pour éviter les conflits entre versions de paquets",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Permettre l’exécution de scripts Python sur des systèmes d’exploitation différents",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        },
+        {
+          "text": "Faciliter le déploiement de scripts Python sur des serveurs distants",
+          "mark": "none",
+          "relative_position": "other",
+          "comment": ""
+        }
+      ],
+      "annotations": {
+        "text": "parce que en fin j’isole les deps de projet avec des vers d’un projet (mesure 2) le fait d’utiliser poetry ou uv a python venv simplifie les taches et donne accord a l’execution de comptes",
+        "drawings": "",
+        "analysis": "Long paragraphe manuscrit bleu sous les choix expliquant l’intérêt des environnements virtuels. Aucune autre marque sur les autres options."
+      }
+    }
+  ],
+  "_source_pdf": "pdfs/2025-10-16-14-46-25.pdf"
+}
