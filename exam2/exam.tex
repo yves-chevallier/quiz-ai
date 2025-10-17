@@ -14,17 +14,9 @@
 \usepackage{xcolor}
 \usepackage{etoolbox}
 \usepackage{zref-savepos}
-\newcommand{\PDFTag}[1]{\leavevmode\smash{\makebox[0pt][l]{\textcolor{white}{#1}}}}
 
-\makeatletter
-\AtBeginEnvironment{questions}{%
-  \apptocmd{\question}{%
-    \edef\qcurr{\number\value{question}}%
-    \PDFTag{Q\qcurr-anchor}%
-    \zsavepos{Q\qcurr-anchor}%
-  }{}{}%
-}
-\makeatother
+
+
 
 \usetikzlibrary{calc}
 \hypersetup{pdfborder={0 0 0}, colorlinks=false} % pas de bordures visibles
@@ -59,17 +51,44 @@
 
 \date{8 octobre 2025}
 
-% Un seul anchor par question (avant \question).
-% Comme \question incrémente le compteur en interne, on calcule q_next = value(question)+1
-\pretocmd{\question}{%
-  \edef\qnext{\number\numexpr\value{question}+1\relax}%
-  % Anchor à gauche du début du texte de la question :
-  \tikz[remember picture,overlay]%
-    \node (Q\qnext-anchor) [opacity=0,inner sep=0pt,anchor=base east]%
-      {\textcolor{white}{Q\qnext-anchor}};%
-  \xdef\lastq{\qnext}%
-}{}{}
+
+% \makeatletter
+% % % \qformat{\Hy@raisedlink{\hypertarget{Q\thequestion-anchor}{}}\thequestion. \ }
+% % %\def\qformat{\thequestion. \ }
+% \qformat{\leavevmode\makebox[0pt][l]{\Hy@raisedlink{\hypertarget{Q\thequestion-anchor}{}}}\thequestion.\ }
+
+% \makeatother
+% \makeatletter
+% \qformat{\leavevmode\rlap{\hyper@anchorstart{Q\thequestion-anchor}\hyper@anchorend}\thequestion.\ }%
+% \makeatother
+
+% \makeatletter
+% \AtBeginEnvironment{questions}{%
+%   % Préfixer \question une fois que l'env a installé sa version
+%   \pretocmd{\question}{%
+%     \leavevmode
+%     \edef\qnext{\number\numexpr\value{question}+1\relax}%
+%     % ancre PDF, largeur nulle, collée au début de la ligne
+%     \rlap{\hyper@anchorstart{Q\qnext-anchor}\hyper@anchorend}%
+%   }{}{}%
+% }
+% \makeatother
+
+% \makeatletter
+% \qformat{%
+%   %\leavevmode\rlap{\hyper@anchorstart{Q\thequestion-anchor}\hyper@anchorend}%
+%   \thequestion.\ %
+% }%
+% \makeatother
+
+\makeatletter
+\renewcommand{\questionlabel}{%
+  \Hy@raisedlink{\hypertarget{Q\thequestion-anchor}{}}%
+  \thequestion.
+}
 \makeatother
+
+%\qformat{\thequestion. \ \ignorespaces}
 
 \begin{document}
 
@@ -103,9 +122,7 @@
 \begin{questions}
 
 
-    \question
-
-    Python est un langage qui a été créé par Guido van Rossum en 1991. Guido van Rossum est souvent appelé le BDFL de Python. Que signifie BDFL ?
+    \question Python est un langage qui a été créé par Guido van Rossum en 1991. Guido van Rossum est souvent appelé le BDFL de Python. Que signifie BDFL ?
 
     \begin{multicols}{2}
         \begin{checkboxes}
@@ -118,9 +135,7 @@
         \end{checkboxes}
     \end{multicols}
 
-    \question
-
-    Que signifie REPL en Python ?
+    \question{} Que signifie REPL en Python ?
 
     \begin{checkboxes}
         \choice Runtime Environment for Python Libraries, utilisé pour exécuter des modules Python

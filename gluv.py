@@ -1,230 +1,256 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-Ajoute automatiquement, pour chaque question détectée par une ancre "Q<n>-anchor"
-dans un PDF (produit avec la classe exam + tags invisibles), deux éléments :
-  1) Un "V" ou "X" rouge, choisi aléatoirement, placé à 1 cm à gauche de l'ancre (sauf la dernière ancre d'une page)
-  2) Un rectangle magenta allant horizontalement de 5 mm du bord gauche jusqu'à l'abscisse de l'ancre,
-     et verticalement de l'ordonnée de l'ancre jusqu'à 5 mm au-dessus de l'ancre suivante.
-
-Les positions et tailles sont en millimètres, converties en points PDF pour le dessin.
-Le script parcourt TOUTES les pages et ne dessine rien si une page ne contient pas d'ancres.
-
-Pré-requis:
-  pip install reportlab pymupdf
-
-Note:
-  Le script suppose que le PDF source contient des chaînes de texte invisibles
-  "Q<numero>-anchor" dans le flux PDF (une par question), extractibles par PyMuPDF.
-"""
-
 from pathlib import Path
-import io
-import random
+import io, re, random
 from typing import List, Dict, Tuple
-
 import fitz  # PyMuPDF
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from reportlab.lib.colors import magenta
+from reportlab.platypus import Frame, Paragraph, KeepInFrame
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
+from reportlab.lib.colors import Color
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPDF
+from reportlab.lib import colors
 
-# -----------------------
-# Configuration utilisateur
-# -----------------------
+PDF_INPUT = Path("exam2/exam.pdf")
+PDF_OUTPUT = Path("fapouille.pdf")
 
-PDF_INPUT = Path("exam2/exam.pdf")  # chemin du PDF d'entrée
-PDF_OUTPUT = Path("fapouille.pdf")         # chemin du PDF de sortie
-
-# Police manuscrite optionnelle pour les marques "V"/"X" (fallback si absente)
-FONT_HAND_PATH = Path("fonts/HomemadeApple-Regular.ttf")
-
-# Couleur rouge personnalisée pour "V"/"X" (RGB 0..1)
+PT_TO_MM = 0.352777778  # 25.4 / 72
+LEFT_MARGIN_MM = 1.0
+RIGHT_MARGIN_MM = 0.0
+LEFT_OF_ANCHOR_TEXT_MM = 5.0
+GAP_ABOVE_NEXT_ANCHOR_MM = 5.0  # marge au-dessus de l’ancre suivante (en mm)
 PEN_COLOR = (0.85, 0.10, 0.10)
 
-# Décalages en millimètres
-LEFT_MARGIN_MM = 5.0        # marge gauche minimale de la page pour la boîte
-LEFT_OF_ANCHOR_TEXT_MM = 10 # "V"/"X" placé 10 mm (1 cm) à gauche de l'ancre
-GAP_ABOVE_NEXT_ANCHOR_MM = 5  # la boîte s'arrête 5 mm AVANT l'ancre suivante
+R_TAG = re.compile(r"^Q(\d+)-anchor$")
+FONT_HAND_PATH = Path("fonts/Licorice-Regular.ttf")#HomemadeApple-Regular.ttf")
 
-# Graine aléatoire optionnelle (décommentez pour rendre reproductible)
-# random.seed(42)
+check_mark = svg2rlg("check.svg")
+check_mark.scale(0.7, 0.7)
 
 
-# -----------------------
-# Utilitaires
-# -----------------------
+FORTUNES_FR = [
+    "Bien joué !",
+    "Attention à la syntaxe...",
+    "Excellent raisonnement !",
+    "Presque parfait… encore un petit effort.",
+    "C’est mieux que la dernière fois !",
+    "Tu peux le faire !",
+    "Une belle tentative.",
+    "Je vois du progrès ici.",
+    "Attention aux détails.",
+    "Très bonne idée, mais mal appliquée.",
+]
 
-PT_TO_MM = 0.352778  # 1 pt ≈ 0.352778 mm
+def phrase_aleatoire() -> str:
+    return random.choice(FORTUNES_FR)
 
-def page_anchors_mm(page: fitz.Page) -> List[Tuple[float, float, int]]:
+def recolor_drawing(drawing, color):
+    """Force la couleur de tous les éléments du dessin SVG."""
+    if hasattr(drawing, "contents"):
+        for elem in drawing.contents:
+            recolor_drawing(elem, color)
+    if hasattr(drawing, "fillColor"):
+        drawing.fillColor = color
+    if hasattr(drawing, "strokeColor"):
+        drawing.strokeColor = color
+
+def anchors_for_page(doc: fitz.Document, pno: int) -> list[tuple[float, float, int]]:
     """
-    Extrait les ancres "Q<n>-anchor" de la page, renvoie une liste triée par Y:
-    [(x_mm, y_mm, question_id), ...]
+    Renvoie les ancres sous forme [(x_mm_from_bottom, y_mm_from_bottom, qnum), ...]
+    en se basant sur les destinations nommées hyperref.
     """
-    anchors = []
-    for x0, y0, x1, y1, text, *_ in page.get_text("blocks"):
-        if not text:
+    out: list[tuple[float, float, int]] = []
+    resolver = getattr(doc, "resolve_names", None)
+    if not resolver:
+        return out
+
+    crop = doc[pno].cropbox  # si jamais il y avait un offset de crop
+
+    for name, dest in resolver().items():  # name -> {'page': int, 'to': (x,y), ...}
+        m = R_TAG.match(name)
+        if not m or dest.get("page") != pno:
             continue
-        t = text.strip()
-        # On cherche exactement Q<nombre>-anchor
-        if t.startswith("Q") and t.endswith("-anchor"):
-            try:
-                qid = int(t.split("-")[0][1:])
-            except Exception:
-                continue
-            # centre du bloc texte -> coordonnées en mm
-            cx_pt = (x0 + x1) / 2.0
-            cy_pt = (y0 + y1) / 2.0
-            anchors.append((cx_pt * PT_TO_MM, cy_pt * PT_TO_MM, qid))
-    # trier par ordonnée (haut -> bas ; dans PDF y croît vers le bas)
-    anchors.sort(key=lambda el: el[1])
-    print(f"Page {page.number + 1}: found anchors {anchors}")
-    return anchors
+        x_pt, y_pt = dest.get("to", (None, None))
+        if x_pt is None or y_pt is None:
+            continue
+        # Ajustement éventuel si CropBox décale (ici c'est 0,0 mais on garde le correctif)
+        x_pt -= crop.x0
+        y_pt -= crop.y0
+        out.append((x_pt * PT_TO_MM, y_pt * PT_TO_MM, int(m.group(1))))
+
+    # On va travailler du HAUT vers le BAS (plus naturel visuellement)
+    # En repère bas-gauche : y haut > y bas -> tri décroissant
+    out.sort(key=lambda t: t[1], reverse=True)
+    return out
 
 
-def make_overlay_pdf_for_page(
-    page_size_pts: Tuple[float, float],
-    draw_items: List[Dict]
-) -> bytes:
+def overlay_pdf(page_size_pts: Tuple[float, float], items: list[Dict]) -> bytes:
     """
-    Construit un PDF (une page) en mémoire avec ReportLab, contenant:
-     - marques "V"/"X" rouges,
-     - rectangles magenta.
-    draw_items: liste de dicts:
-       {"kind": "mark", "x_mm": float, "y_mm": float, "text": "V"|"X", "fontsize": int}
-       {"kind": "rect", "x_mm": float, "y_mm": float, "w_mm": float, "h_mm": float}
-    Retourne le bytes du PDF.
+    Construit une page d’overlay (repère bas-gauche). Gère:
+      - kind="mark": un petit marqueur centré
+      - kind="rect": un rectangle (cadre)
+      - kind="textbox": du texte multi-lignes auto-wrap dans un cadre
     """
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=page_size_pts)
-
-    # Police: tenter la manuscrite, sinon fallback Helvetica
+    c.setFont("Helvetica", 12)  # fallback
     try:
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
         pdfmetrics.registerFont(TTFont("HandFont", str(FONT_HAND_PATH)))
-        has_hand = True
-    except Exception:
-        has_hand = False
+        c.setFont("HandFont", 14)
+    except Exception as e:
+        print("Police non chargée, fallback Helvetica :", e)
 
-    width_pts, height_pts = page_size_pts
+    def to_xy(x_mm, y_mm):
+        return (x_mm * mm, y_mm * mm)
 
-    def mm_to_pts_xy(x_mm: float, y_mm: float) -> Tuple[float, float]:
-        """Convertit (mm relatif top-left) en points ReportLab (origine bas-gauche)."""
-        return x_mm * mm, height_pts - y_mm * mm
+    # Style de paragraphe par défaut (modifiable par item)
+    base_style = ParagraphStyle(
+        name="base",
+        fontName="HandFont",      # ok pour FR de base ; si besoin, enregistre un TTF
+        fontSize=10,
+        leading=12,                # ~1.2 * fontSize
+        alignment=TA_LEFT,         # TA_JUSTIFY si désiré
+        spaceBefore=0,
+        spaceAfter=0,
+        textColor=Color(0.9, 0.3, 0.1),
+    )
 
-    # Dessin
-    for it in draw_items:
-        if it["kind"] == "mark":
-            x_mm, y_mm = it["x_mm"], it["y_mm"]
-            text = it["text"]
-            fontsize = it.get("fontsize", 14)
+    for it in items:
+        kind = it["kind"]
+        if kind == "mark":
+            x, y = to_xy(it["x_mm"], it["y_mm"])
+            c.setFillColorRGB(*PEN_COLOR)
+            c.setFont("Helvetica-Bold", it.get("fontsize", 16))
+            c.drawCentredString(x, y, it["text"])
 
-            x_pts, y_pts = mm_to_pts_xy(x_mm, y_mm)
-
-            # Couleur rouge perso
-            r, g, b = PEN_COLOR
-            c.setFillColorRGB(r, g, b)
-
-            if has_hand:
-                c.setFont("HandFont", fontsize)
-            else:
-                # Helvetica Bold pour être bien lisible
-                c.setFont("Helvetica-Bold", fontsize)
-
-            # centré verticalement sur y_mm, et centré horizontalement sur x_mm
-            # (x_mm ici est la position cible exacte)
-            c.drawCentredString(x_pts, y_pts, text)
-
-        elif it["kind"] == "rect":
-            x_mm, y_mm = it["x_mm"], it["y_mm"]
-            w_mm, h_mm = it["w_mm"], it["h_mm"]
-            x_pts, y_pts = mm_to_pts_xy(x_mm, y_mm)
-            # y_pts est le haut du rectangle -> reportlab rect attend le coin bas-gauche
-            # On convertit donc la hauteur
+        elif kind == "rect":
+            x, y = to_xy(it["x_mm"], it["y_mm"])
             c.setStrokeColor(magenta)
-            c.setLineWidth(1)  # ~0.35 mm
-            c.rect(x_pts, y_pts - h_mm * mm, w_mm * mm, h_mm * mm, fill=0)
+            c.setLineWidth(1)
+            c.rect(x, y, it["w_mm"] * mm, it["h_mm"] * mm, fill=0)
+        elif kind == "svg":
+            x, y = to_xy(it["x_mm"], it["y_mm"])
+            drawing = svg2rlg(str(it["path"]))       # Path vers ton SVG
+            # Mise à l’échelle optionnelle (par mm)
+            w = it.get("w_mm"); h = it.get("h_mm")
+            if w and h:
+                # scale prend des facteurs, pas des mm : calculer par bbox
+                bw = drawing.minWidth(); bh = drawing.height
+                sx = (w * mm) / max(bw, 1e-6)
+                sy = (h * mm) / max(bh, 1e-6)
+                drawing.scale(sx, sy)
+
+            # 🎨 Recolorisation (ex. color=(0.1,0.6,0.2))
+            if "color" in it:
+                r, g, b = it["color"]
+                recolor_drawing(drawing, colors.Color(r, g, b))
+
+            renderPDF.draw(drawing, c, x, y)
+        elif kind == "textbox":
+            # Cadre + texte avec word-wrap
+            x, y = to_xy(it["x_mm"], it["y_mm"])
+            w = it["w_mm"] * mm
+            h = it["h_mm"] * mm
+
+            # Marges internes optionnelles
+            pad_mm = it.get("pad_mm", 2.0)
+            px = x + pad_mm * mm
+            py = y + pad_mm * mm
+            pw = max(0, w - 2 * pad_mm * mm)
+            ph = max(0, h - 2 * pad_mm * mm)
+
+            # Style spécifique (optionnel par item)
+            st = ParagraphStyle(
+                name="box",
+                parent=base_style,
+                fontSize=it.get("fontSize", base_style.fontSize),
+                leading=it.get("leading", None) or int(1.2 * it.get("fontSize", base_style.fontSize)),
+                alignment=it.get("align", TA_LEFT),
+            )
+
+
+            story = [Paragraph(it["text"], st)]
+            # keepInFrame: 'shrink' pour tout faire tenir, sinon 'truncate' ou 'error'
+            kif = KeepInFrame(pw, ph, story, mode=it.get("overflow", "shrink"))
+            frame = Frame(px, py, pw, ph, showBoundary=0)
+            frame.addFromList([kif], c)
+
+        else:
+            # Inconnu -> ignore
+            pass
 
     c.showPage()
     c.save()
     return buf.getvalue()
 
 
-# -----------------------
-# Pipeline principal
-# -----------------------
 
 def main():
     doc = fitz.open(str(PDF_INPUT))
 
-    for page_index in range(len(doc)):
-        page = doc[page_index]
-        anchors = page_anchors_mm(page)
-        if len(anchors) < 2:
-            # S'il n'y a pas au moins 2 ancres sur la page, on ne peut pas faire
-            # la boîte verticale jusqu'à "5 mm avant la suivante"
-            # (et on ne place rien à côté de la dernière ancre)
+    for pno, page in enumerate(doc):
+        anchors = anchors_for_page(doc, pno)
+        print(f"Page {pno+1}: {len(anchors)} anchors")
+
+        if not anchors:
             continue
 
-        # Taille réelle de la page en points (pour générer un overlay identique)
-        page_rect = page.rect
-        page_size_pts = (page_rect.width, page_rect.height)
+        items: list[Dict] = []
 
-        # Construire les items à dessiner pour CETTE page
-        items: List[Dict] = []
+        # Marqueurs et rectangles "entre" deux ancres successives (haut -> bas)
+        BOTTOM_MARGIN_MM = 10.0  # par ex.
 
-        # Pour chaque ancre SAUF la dernière, on dessine:
-        # 1) un "V" ou "X" rouge à 10 mm à gauche
-        # 2) un rectangle magenta de 5 mm (gauche page) -> x_anchor,
-        #    verticalement de y_anchor -> y_next_anchor - 5 mm
-        for i in range(len(anchors) - 1):
-            x_mm, y_mm, _qid = anchors[i]
-            x_next_mm, y_next_mm, _ = anchors[i + 1]
+        for j, (x_mm, y_mm, q) in enumerate(anchors):
+            # ... tes items "textbox" habituels ...
+            if j + 1 < len(anchors):
+                _, y_next, _ = anchors[j + 1]
+            else:
+                # Dernière ancre de la page : utiliser le bas de la page comme "ancre suivante"
+                y_next = BOTTOM_MARGIN_MM
 
-            # (1) Mark V/X
-            mark_text = random.choice(["V", "X"])
-            mark_x_mm = max(LEFT_MARGIN_MM, x_mm - LEFT_OF_ANCHOR_TEXT_MM)
-            items.append({
-                "kind": "mark",
-                "x_mm": mark_x_mm,
-                "y_mm": y_mm,
-                "text": mark_text,
-                "fontsize": 16
-            })
-
-            # (2) Rectangle magenta
-            left_x = LEFT_MARGIN_MM
-            right_x = max(LEFT_MARGIN_MM, x_mm)  # borne droite = abscisse de l'ancre
             top_y = y_mm
-            bottom_y = max(top_y, y_next_mm - GAP_ABOVE_NEXT_ANCHOR_MM)
+            bottom_y = max(0.0, y_next + GAP_ABOVE_NEXT_ANCHOR_MM)
+            if bottom_y < top_y:
+                h = top_y - bottom_y
+                w = max(0.0, max(LEFT_MARGIN_MM, x_mm - RIGHT_MARGIN_MM) - LEFT_MARGIN_MM)
+                if w > 0.1 and h > 0.1:
+                    glyph = random.choice(["check", "cross"])
 
-            w_mm = max(0.0, right_x - left_x)
-            h_mm = max(0.0, bottom_y - top_y)
+                    items.append({
+                        "kind": "svg",
+                        "path": Path(glyph+ ".svg") ,
+                        "x_mm": x_mm - 4.0,
+                        "y_mm": top_y - 5,  # centré verticalement
+                        "w_mm": 3.0,
+                        "h_mm": 3.0,
+                        "color": (0.9, 0.3, 0.1)
+                    })
 
-            if w_mm > 0.1 and h_mm > 0.1:
-                items.append({
-                    "kind": "rect",
-                    "x_mm": left_x,
-                    "y_mm": top_y,
-                    "w_mm": w_mm,
-                    "h_mm": h_mm
-                })
+                    items.append({
+                        "kind": "textbox",
+                        "x_mm": LEFT_MARGIN_MM,
+                        "y_mm": bottom_y,
+                        "w_mm": w,
+                        "h_mm": h - 3,
+                        "pad_mm": 0.0,
+                        "text": phrase_aleatoire(),
+                        "fontSize": 10,
+                        "align": TA_RIGHT,
+                        "overflow": "shrink",
+                    })
 
-        # Générer overlay en mémoire et l'appliquer
-        overlay_bytes = make_overlay_pdf_for_page(page_size_pts, items)
-        overlay_doc = fitz.open("pdf", overlay_bytes)
+        # Superpose l’overlay (même page size)
+        ov = fitz.open("pdf", overlay_pdf((page.rect.width, page.rect.height), items))
+        page.show_pdf_page(page.rect, ov, 0)
+        ov.close()
 
-        # show_pdf_page: colle la page 0 de l'overlay sur la page cible
-        page.show_pdf_page(page.rect, overlay_doc, 0)
-
-        overlay_doc.close()
-
-    # Sauvegarde du PDF final
     doc.save(str(PDF_OUTPUT))
     doc.close()
-    print(f"✅ PDF annoté enregistré : {PDF_OUTPUT}")
 
 
 if __name__ == "__main__":

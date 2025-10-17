@@ -3,3 +3,5 @@
 venv/
 *.aux
 *.fdb_*
+*.out
+*:Zone.Identifier
