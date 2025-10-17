@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from openai import OpenAI
 from pdf2image import convert_from_path
 import fitz  # PyMuPDF
+import time
 
 # =============== CONFIG ===============
 DPI_IMAGES = 220
@@ -221,55 +222,114 @@ def analyze_images_for_pdf(image_paths: List[str]) -> List[Dict[str, Any]]:
     Retourne une liste de pages JSON (une entrée par page).
     """
     pages_data = []
-    base_prompt = """
-        Tu es un correcteur humain impartial et précis.
-        Pour cette page d'un quiz manuscrit, renvoie STRICTEMENT un JSON décrivant :
-        - page_index (1-based),
-        - éventuellement student_name/quiz_title si visibles sur cette page
-        - note_anchor (x,y) sur la première page, dans une zone de 2x2 cm vide, plutôt en haut et à droite
-        - pour chaque question:
-            - numéro de question number
-            - kind (single/multi/fillin/open)
-            - selected_options[]
-            - handwriting (note manuscrite de l'étudiant)
-            - remarque de l'analyse (rature, barré recoché...)
-            - indice de confidence float entre 0..1
-            - mark_anchor (x,y,w,h), espace de 1x1 cm blanc dans marge de gauche préférablement sinon à droite
-            - feedback_box (x,y,w,h), espace maximum blanc disponible dans la région de la question sans confusion pour autre question
-            - Pour les question à choix multiple, détecte les options cochées en faisant attention aux ratures, corrections, consignes les dans
-            - Tient compte toujours des annotations manuscrites (ex: barré mais recoché), texte explicatif, dessins, etc.
-            - Explique les dessins s'il y a lieu (ex: schéma, graphique), dans handwriting.
-        N'invente rien: si incertain/absent, laisse vide.
+    SYSTEM_PROMPT = """
+    You are an impartial and precise human corrector.
+
+    Your role is to analyze a scanned or photographed handwritten quiz page
+    and extract structured information about the student's answers.
+
+    ## Task
+    You must visually interpret each provided image (A4 page, 210×297 mm)
+    and return a **strict JSON object** describing the page and all its questions.
+
+    Do not return text explanations — only valid JSON.
+
+    ---
+
+    ## JSON Structure
+
+    {
+    "name": "string, usually top right after 'Nom:'",
+    "date": "string, centered under title, format YYYY-MM-DD",
+    "title": "string, centered on first page",
+    "mark_anchor": {"x": int, "y": int},
+    "questions": [
+        {
+        "id": int,                       // Question number (1-based)
+        "page": int,                     // Page index (1-based)
+        "kind": "single|multi|fillin|open",
+        "selected_options": [string],    // Exact text of options checked/selected
+        "handwriting": "string",         // Transcribed handwritten answer, notes, or drawings
+        "remark": "string",              // Analysis notes (strikethroughs, corrections, etc.)
+        "confidence": float,             // Between 0 and 1
+        "mark_anchor": {"x": int, "y": int, "w": int, "h": int},   // 1x1 cm area for marking
+        "feedback_box": {"x": int, "y": int, "w": int, "h": int},  // Largest free space for remarks
+        "question_anchor": {"x": int, "y": int}                    // Position of the question area
+        }
+    ]
+    }
+
+    ---
+
+    ## Rules & Constraints
+
+    - Each image is one full A4 page (210×297 mm).
+    - Page index can be confirmed by counting "Page X of Y" if present.
+    - All coordinates are in **millimeters**, relative to the top-left corner of the page.
+    - Coordinates and dimensions are **integers (rounded millimeters)**.
+    - Anchors must stay within page boundaries, at least 5 mm from edges.
+    - If data is unclear or absent, leave fields empty (e.g. "").
+    - Include **all questions**, even unanswered ones.
+    - Accurately transcribe all handwritten content (text, formulas, drawings).
+    - For multiple-choice: detect **checked options**, and exclude **crossed-out** ones.
+    - For fill-in or open: include exact handwritten response or describe drawing.
+    - Maintain a **formal and neutral tone** in remarks.
+    - Do not include a remark if not necessary, leave it as an empty string.
+    - Confidence set to 1.0 if absolutely certain, 0.0 if guessing.
+    - The output must be a single valid JSON object — **no extra text**.
+
+    ---
+
+    ## Output Policy
+
+    - Never return Markdown or explanations.
+    - Never add comments or narrative text.
+    - The model must produce **only valid JSON** following the structure above.
     """
 
-    for i, path in enumerate(image_paths, start=1):
-        data_url = img_to_data_url(Path(path))
-        resp = client.chat.completions.create(
-            model=MODEL_VISION,
-            response_format={"type": "json_object"},
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Tu analyses visuellement une copie d'examen et tu renvoies un JSON strict.",
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": base_prompt + f" Indique page_index={i}.",
-                        },
-                        {"type": "image_url", "image_url": {"url": data_url}},
-                    ],
-                },
-            ],
-            # temperature=0
-        )
-        page_json = json.loads(resp.choices[0].message.content)
-        page_json.setdefault("page_index", i)
-        page_json.setdefault("questions", [])
-        pages_data.append(page_json)
-    return pages_data
+    images = [{"type": "image_url", "image_url": {"url": img_to_data_url(Path(path))}} for path in image_paths]
+    start = time.perf_counter()
+
+    resp = client.chat.completions.create(
+        model=MODEL_VISION,
+        response_format={"type": "json_object"},
+        messages=[
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT
+            },
+            # {
+            #     "role": "user",
+            #     "content": [
+            #         {
+            #             "type": "text",
+            #             "text": (
+            #                 "Before giving you the student work, here a "
+            #                 "reference data: this is the official answer key JSON. "
+            #                 "Use it only for *cross-checking correctness* and do NOT copy it into the output. "
+            #                 "If something is ambiguous on the page, prefer the handwriting. "
+            #                 "Keep remarks empty unless needed."
+            #             ),
+            #         },
+            #         {"text": json.dumps(solutions, ensure_ascii=False)}
+            #     ],
+            # },
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "Analyze this quiz"}] + images,
+            },
+        ]
+        # temperature=0
+    )
+    end = time.perf_counter()
+    elapsed = end - start  # secondes (float)
+
+    print(f"    - Prompt tokens: {resp.usage.prompt_tokens}\n"
+          f"    - Completion tokens: {resp.usage.completion_tokens}\n"
+          f"    - Total tokens: {resp.usage.total_tokens}"
+          f"    - Time elapsed: {elapsed:.2f} seconds"
+    )
+    return json.loads(resp.choices[0].message.content)
 
 
 def run_analysis_all_pdfs(

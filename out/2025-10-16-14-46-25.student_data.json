@@ -1,0 +1,539 @@
+{
+  "name": "",
+  "date": "2025-10-08",
+  "title": "Quiz Python QZ-01",
+  "mark_anchor": {
+    "x": 195,
+    "y": 10
+  },
+  "questions": [
+    {
+      "id": 1,
+      "page": 2,
+      "kind": "single",
+      "selected_options": [
+        "Best Data Format Language"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 20,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 25,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 20
+      }
+    },
+    {
+      "id": 2,
+      "page": 2,
+      "kind": "single",
+      "selected_options": [],
+      "handwriting": "",
+      "remark": "The option “Repetitive Execution Program Library, déconseillé pour les débutants” is crossed out; no clearly selected choice.",
+      "confidence": 0.5,
+      "mark_anchor": {
+        "x": 190,
+        "y": 60,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 65,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 60
+      }
+    },
+    {
+      "id": 3,
+      "page": 2,
+      "kind": "single",
+      "selected_options": [
+        "ipython"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 100,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 105,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 100
+      }
+    },
+    {
+      "id": 4,
+      "page": 2,
+      "kind": "fillin",
+      "selected_options": [],
+      "handwriting": "1. [1] -> liste\n2. {1} -> set\n3. {1:2} -> dictionnaire\n4. (1, 2) -> tuple\n5. (i for i in range(3)) -> comprehension generator\n6. 'abc' -> chaine de caractere",
+      "remark": "",
+      "confidence": 0.6,
+      "mark_anchor": {
+        "x": 190,
+        "y": 135,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 130,
+        "y": 140,
+        "w": 70,
+        "h": 35
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 135
+      }
+    },
+    {
+      "id": 5,
+      "page": 2,
+      "kind": "single",
+      "selected_options": [
+        "['12', '142', '142', '225']"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 200,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 205,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 200
+      }
+    },
+    {
+      "id": 6,
+      "page": 2,
+      "kind": "single",
+      "selected_options": [
+        "from math import sqrt"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 235,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 240,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 235
+      }
+    },
+    {
+      "id": 7,
+      "page": 3,
+      "kind": "single",
+      "selected_options": [
+        "Le type d’une variable est déterminé automatiquement au moment de l’exécution"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 20,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 25,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 20
+      }
+    },
+    {
+      "id": 8,
+      "page": 3,
+      "kind": "open",
+      "selected_options": [],
+      "handwriting": "la méthode spéciale __init__ (avec deux underscores devant et derrière)",
+      "remark": "",
+      "confidence": 0.65,
+      "mark_anchor": {
+        "x": 190,
+        "y": 45,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 130,
+        "y": 50,
+        "w": 70,
+        "h": 25
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 45
+      }
+    },
+    {
+      "id": 9,
+      "page": 3,
+      "kind": "fillin",
+      "selected_options": [],
+      "handwriting": "1. next\n2. iter",
+      "remark": "",
+      "confidence": 0.9,
+      "mark_anchor": {
+        "x": 190,
+        "y": 85,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 90,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 85
+      }
+    },
+    {
+      "id": 10,
+      "page": 3,
+      "kind": "fillin",
+      "selected_options": [],
+      "handwriting": "1. méthodes (actions)\n2. état d’instance (variables d’état)",
+      "remark": "",
+      "confidence": 0.6,
+      "mark_anchor": {
+        "x": 190,
+        "y": 115,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 130,
+        "y": 120,
+        "w": 70,
+        "h": 25
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 115
+      }
+    },
+    {
+      "id": 11,
+      "page": 3,
+      "kind": "single",
+      "selected_options": [
+        "C’est un mot clé qui permet de définir une fonction"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 150,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 155,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 150
+      }
+    },
+    {
+      "id": 12,
+      "page": 3,
+      "kind": "single",
+      "selected_options": [
+        "Pour arrêter une boucle for"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 180,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 185,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 180
+      }
+    },
+    {
+      "id": 13,
+      "page": 3,
+      "kind": "single",
+      "selected_options": [
+        "4"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 210,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 215,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 210
+      }
+    },
+    {
+      "id": 14,
+      "page": 3,
+      "kind": "single",
+      "selected_options": [
+        "[1, 2, 3, 4]"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 245,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 250,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 245
+      }
+    },
+    {
+      "id": 15,
+      "page": 4,
+      "kind": "fillin",
+      "selected_options": [],
+      "handwriting": "—",
+      "remark": "Answer area left blank except for a long underscore line.",
+      "confidence": 0.4,
+      "mark_anchor": {
+        "x": 190,
+        "y": 20,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 130,
+        "y": 25,
+        "w": 70,
+        "h": 25
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 20
+      }
+    },
+    {
+      "id": 16,
+      "page": 4,
+      "kind": "single",
+      "selected_options": [
+        "[4, 16]"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 60,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 65,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 60
+      }
+    },
+    {
+      "id": 17,
+      "page": 4,
+      "kind": "single",
+      "selected_options": [
+        "Gérer les dépendances et automatiser la création d’environnements virtuels pour Python"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 95,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 100,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 95
+      }
+    },
+    {
+      "id": 18,
+      "page": 4,
+      "kind": "single",
+      "selected_options": [
+        "Un dictionnaire"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.9,
+      "mark_anchor": {
+        "x": 190,
+        "y": 135,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 140,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 135
+      }
+    },
+    {
+      "id": 19,
+      "page": 4,
+      "kind": "single",
+      "selected_options": [
+        "Un tuple est immuable, une liste est mutable"
+      ],
+      "handwriting": "",
+      "remark": "",
+      "confidence": 0.95,
+      "mark_anchor": {
+        "x": 190,
+        "y": 175,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 140,
+        "y": 180,
+        "w": 60,
+        "h": 20
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 175
+      }
+    },
+    {
+      "id": 20,
+      "page": 4,
+      "kind": "single",
+      "selected_options": [
+        "Améliorer les performances d’exécution des scripts Python"
+      ],
+      "handwriting": "parce que en plus d’isoler les deps de projet avec des vars d’env propres (notes 2) le fait d’utiliser poetry ou uv ou python … simplifie les tâches et donc accélère l’exécution des scripts",
+      "remark": "",
+      "confidence": 0.6,
+      "mark_anchor": {
+        "x": 190,
+        "y": 215,
+        "w": 10,
+        "h": 10
+      },
+      "feedback_box": {
+        "x": 120,
+        "y": 235,
+        "w": 80,
+        "h": 45
+      },
+      "question_anchor": {
+        "x": 15,
+        "y": 215
+      }
+    }
+  ]
+}

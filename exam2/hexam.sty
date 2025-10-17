@@ -1,0 +1,173 @@
+\usepackage[a4paper, total={165mm,250mm}]{geometry}
+\usepackage{listings}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{regexpatch}
+\usepackage{realboxes}
+\usepackage{textcomp}
+\usepackage{xfrac}
+\usepackage{tikzpagenodes}
+\usepackage[xparse,skins,breakable]{tcolorbox}
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage{booktabs}
+\usepackage{heiglogo}
+\usepackage{tikz}
+\usepackage{tabularx,ragged2e}
+\usepackage{zref-savepos}
+\usepackage{letltxmacro}
+
+\usetikzlibrary{calc}
+\setmonofont{inconsolata}
+
+\newcounter{NoTableEntry}
+\renewcommand*{\theNoTableEntry}{NTE-\the\value{NoTableEntry}}
+
+\newcommand*{\strike}[2]{%
+\multicolumn{1}{#1}{%
+\stepcounter{NoTableEntry}%
+\vadjust pre{\zsavepos{\theNoTableEntry t}}% top
+\vadjust{\zsavepos{\theNoTableEntry b}}% bottom
+\zsavepos{\theNoTableEntry l}% left
+\hspace{0pt plus 1filll}%
+#2% content
+\hspace{0pt plus 1filll}%
+\zsavepos{\theNoTableEntry r}% right
+\tikz[overlay]{%
+\draw
+let
+\n{llx}={\zposx{\theNoTableEntry l}sp-\zposx{\theNoTableEntry r}sp-\tabcolsep},
+\n{urx}={\tabcolsep},
+\n{lly}={\zposy{\theNoTableEntry b}sp-\zposy{\theNoTableEntry r}sp},
+\n{ury}={\zposy{\theNoTableEntry t}sp-\zposy{\theNoTableEntry r}sp}
+in
+(\n{llx}, \n{lly}) -- (\n{urx}, \n{ury})
+;
+\draw
+let
+\n{llx}={\zposx{\theNoTableEntry l}sp-\zposx{\theNoTableEntry r}sp-\tabcolsep},
+\n{urx}={\tabcolsep},
+\n{lly}={\zposy{\theNoTableEntry b}sp-\zposy{\theNoTableEntry r}sp},
+\n{ury}={\zposy{\theNoTableEntry t}sp-\zposy{\theNoTableEntry r}sp}
+in
+(\n{llx}, \n{ury}) -- (\n{urx}, \n{lly})
+;
+}%
+}%
+}
+
+\setlength{\parskip}{1em}
+
+\definecolor{GitHubGray}{rgb}{0.9,0.9,0.9}
+
+\lstset{
+  language=python,
+  breaklines=true,
+  basicstyle=\ttfamily\footnotesize\color{black},
+  keywordstyle=\bfseries,
+  commentstyle=\itshape\color{black!40!black},
+  keepspaces=true,
+  showspaces=false,
+  showtabs=true,
+  tabsize=3,
+  upquote=true,
+  aboveskip=2pt,
+  belowskip=2pt,
+  framexleftmargin=2pt,
+  extendedchars=true,
+  inputencoding=utf8,
+}
+
+% Listing
+\mdfsetup{%
+  roundcorner=2pt,
+  innerleftmargin=3pt,
+  innertopmargin=3pt,
+  linecolor=black!60,%
+  linewidth=0.3pt,
+  innerbottommargin=3pt
+}
+
+\newcommand{\inlinecpp}[1]{%
+  \tcbox[on line, boxsep=1pt, left=1pt, right=1pt, top=1pt, bottom=1pt,
+    colframe=GitHubGray, colback=GitHubGray, arc=1pt, outer arc=2pt,
+    boxrule=0pt, bottomrule=0pt, toprule=0pt, leftrule=0pt, rightrule=0pt]{{\lstinline{#1}}}%
+}
+
+\NewTotalTCBox{\CD}{v}{verbatim,boxsep=1pt, left=1pt, right=1pt, top=1pt, bottom=1pt,arc=1pt, outer arc=2pt,colframe=GitHubGray,colback=GitHubGray}{\lstinline[]^#1^}
+
+\DeclareRobustCommand*\school[1]{\gdef\@school{#1}}
+\DeclareRobustCommand*\department[1]{\gdef\@department{#1}}
+
+\def\@maketitle{%
+  \newpage
+  \logo{1cm}{1cm}
+  \begin{tikzpicture}[remember picture,overlay,shift={(current page.north west)}]
+    \node[anchor=north west,xshift=1.5cm,yshift=-1.5cm]{
+      {\enspace\makebox[8cm]{}\bfseries Nom :\enspace\makebox[6cm]{\hrulefill}}
+    };
+  \end{tikzpicture}
+
+  \null
+  \vskip 10em%
+  \begin{center}%
+    \let \footnote \thanks
+    {\LARGE \@title \par}%
+    \vskip 1.0em%
+      {\Large \itshape\@school\par}%
+    \vskip .2em%
+      {\itshape\@department\par}%
+    \vskip 1.0em%
+    \ifprintanswers
+    {\Large \bfseries Solution\par}%
+    \fi
+    \vskip 2.0em%
+      {
+        \lineskip .2em%
+        \begin{tabular}[t]{c}%
+          \@author
+        \end{tabular}\par}%
+    \vskip 1em%
+      {\large \@date}%
+  \end{center}%
+  \par
+  \vskip 1.5em}
+
+
+%% Question format
+
+% Add number before the question title
+\xpatchcmd*\@multicolumntable{|c|c|c|c}{|l|c|c|c}{}{}
+\xpatchcmd\questions{\def\@currentlabel{\thequestiontitle}}{\def\@currentlabel{\thequestion. \thequestiontitle}}{}{}
+
+% Configure the question title
+% \qformat{
+%   \large\textbf{Problème \thequestion~: \thequestiontitle}
+%   \quad \hfill(\totalpoints{} \points)
+%   \vrule depth 1.5em width 0pt
+% }
+
+\pointsdroppedatright
+\colorfillwithdottedlines
+
+\definecolor{FillWithDottedLinesColor}{gray}{0.3}
+
+\setlength{\gridsize}{4mm}
+\setlength{\gridlinewidth}{0.15pt}
+
+%% Headers and footers
+
+\footer{Problème \thequestion}
+{Page \thepage\ sur \numpages}
+{\iflastpage{Fin du quiz.}{Aller à la page suivante\ldots}}
+
+\pagestyle{headandfoot}
+
+\firstpageheader{\@title}{}{}
+\runningheader{\@title}
+{}
+{}
+
+\footer{Problème \thequestion}
+{Page \thepage\ sur \numpages}
+{\iflastpage{Fin du quiz.}{Aller à la page suivante\ldots}}

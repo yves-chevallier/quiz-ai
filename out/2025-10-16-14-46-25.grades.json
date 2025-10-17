@@ -1,0 +1,152 @@
+{
+  "grades": [
+    {
+      "number": 1,
+      "total": 1.0,
+      "got": 0.0,
+      "status": "wrong",
+      "comment": "La réponse correcte est 'Benevolent Dictator For Life'."
+    },
+    {
+      "number": 2,
+      "total": 1.0,
+      "got": 0.0,
+      "status": "absent",
+      "comment": "Aucune réponse claire n'a été sélectionnée."
+    },
+    {
+      "number": 3,
+      "total": 1.0,
+      "got": 1.0,
+      "status": "correct",
+      "comment": "Bonne réponse."
+    },
+    {
+      "number": 4,
+      "total": 6.0,
+      "got": 5.0,
+      "status": "partial",
+      "comment": "Erreur sur 'générateur', attendu 'générateur'."
+    },
+    {
+      "number": 5,
+      "total": 1.0,
+      "got": 1.0,
+      "status": "correct",
+      "comment": "Bonne réponse."
+    },
+    {
+      "number": 6,
+      "total": 1.0,
+      "got": 0.0,
+      "status": "absent",
+      "comment": "Aucune réponse correcte fournie."
+    },
+    {
+      "number": 7,
+      "total": 1.0,
+      "got": 1.0,
+      "status": "correct",
+      "comment": "Bonne réponse."
+    },
+    {
+      "number": 8,
+      "total": 1.0,
+      "got": 1.0,
+      "status": "correct",
+      "comment": "Bonne réponse."
+    },
+    {
+      "number": 9,
+      "total": 2.0,
+      "got": 0.0,
+      "status": "wrong",
+      "comment": "Les réponses correctes sont '__iter__' et '__next__'."
+    },
+    {
+      "number": 10,
+      "total": 2.0,
+      "got": 1.0,
+      "status": "partial",
+      "comment": "Erreur sur 'attributs', attendu 'attributs'."
+    },
+    {
+      "number": 11,
+      "total": 1.0,
+      "got": 0.0,
+      "status": "wrong",
+      "comment": "La réponse correcte est 'C'est une convention pour référencer l'instance de la classe actuelle dans une méthode'."
+    },
+    {
+      "number": 12,
+      "total": 1.0,
+      "got": 0.0,
+      "status": "wrong",
+      "comment": "La réponse correcte est 'Pour obtenir le prochain élément d'un itérateur'."
+    },
+    {
+      "number": 13,
+      "total": 1.0,
+      "got": 0.0,
+      "status": "wrong",
+      "comment": "La réponse correcte est '3'."
+    },
+    {
+      "number": 14,
+      "total": 1.0,
+      "got": 1.0,
+      "status": "correct",
+      "comment": "Bonne réponse."
+    },
+    {
+      "number": 15,
+      "total": 1.0,
+      "got": 0.0,
+      "status": "absent",
+      "comment": "Aucune réponse fournie."
+    },
+    {
+      "number": 16,
+      "total": 1.0,
+      "got": 1.0,
+      "status": "correct",
+      "comment": "Bonne réponse."
+    },
+    {
+      "number": 17,
+      "total": 1.0,
+      "got": 0.0,
+      "status": "wrong",
+      "comment": "La réponse correcte est 'Installer des modules Python depuis le terminal'."
+    },
+    {
+      "number": 18,
+      "total": 1.0,
+      "got": 1.0,
+      "status": "correct",
+      "comment": "Bonne réponse."
+    },
+    {
+      "number": 19,
+      "total": 1.0,
+      "got": 1.0,
+      "status": "correct",
+      "comment": "Bonne réponse."
+    },
+    {
+      "number": 20,
+      "total": 1.0,
+      "got": 0.0,
+      "status": "wrong",
+      "comment": "La réponse correcte est 'Isoler les dépendances de projets Python pour éviter les conflits entre versions de paquets'."
+    }
+  ],
+  "total_points": 27.0,
+  "total_got": 13.0,
+  "score": 3.4,
+  "comment": "L'étudiant a bien compris certains concepts mais a besoin de réviser les notions de base et les méthodes spéciales en Python.",
+  "need_human_review": false,
+  "note": 3.4,
+  "got": 13.0,
+  "total": 27.0
+}
