@@ -28,7 +28,7 @@ from typing import Any, Dict, Iterable, List, Union
 
 try:
     import yaml  # PyYAML
-except Exception as e:
+except Exception:
     raise SystemExit("This script requires PyYAML. Try: pip install pyyaml")
 
 
@@ -56,10 +56,11 @@ def convert_inline_code(s: str) -> str:
     """Convert inline `code` to \lstinline|code|.
     Avoid touching triple backtick blocks (handled elsewhere).
     """
+
     def repl(m: re.Match) -> str:
         code = m.group(1)
         # choose a delimiter not contained in code; fallback to |
-        for delim in "|/!;:^~#@" :
+        for delim in "|/!;:^~#@":
             if delim not in code:
                 return f"\\lstinline{delim}{code}{delim}"
         return f"\\lstinline|{code}|"
@@ -193,7 +194,9 @@ def maybe_multicols_close(n_choices: int) -> str:
     return ""
 
 
-def render_choices(choices: List[str], correct_spec: Union[int, List[int], None]) -> str:
+def render_choices(
+    choices: List[str], correct_spec: Union[int, List[int], None]
+) -> str:
     # Normalize correct indices to a set of 1-based positions
     correct: set[int] = set()
     if isinstance(correct_spec, int):
@@ -328,10 +331,18 @@ def render_document(data: Dict[str, Any]) -> str:
 
 # ------------------------- CLI -------------------------
 
+
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Convert YAML quiz to LaTeX exam (exam class)")
+    ap = argparse.ArgumentParser(
+        description="Convert YAML quiz to LaTeX exam (exam class)"
+    )
     ap.add_argument("input", type=Path, help="Path to YAML input file")
-    ap.add_argument("-o", "--output", type=Path, help="Output .tex file path (default: input with .tex)")
+    ap.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Output .tex file path (default: input with .tex)",
+    )
     args = ap.parse_args()
 
     with args.input.open("r", encoding="utf-8") as f:

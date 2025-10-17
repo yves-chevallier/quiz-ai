@@ -23,8 +23,10 @@ FONT_HAND_PATH = Path("fonts/HomemadeApple-Regular.ttf")  # police manuscrite
 
 client = OpenAI()
 
+
 def _has_hand_font() -> bool:
     return FONT_HAND_PATH.exists()
+
 
 def _place_note_label(page, note_anchor, label):
     """
@@ -53,26 +55,30 @@ def _place_note_label(page, note_anchor, label):
             label,
             fontsize=fs,
             color=(1, 0, 0),
-            align=1,   # centré
-            **font_kwargs
+            align=1,  # centré
+            **font_kwargs,
         )
         if remaining == 0:
             return True
     # fallback coin haut-gauche du rectangle
-    page.insert_text((X, Y), label, fontsize=10, color=(1,0,0), **font_kwargs)
+    page.insert_text((X, Y), label, fontsize=10, color=(1, 0, 0), **font_kwargs)
     return False
+
 
 def _g_points_got(g):
     # item de grade – supporte: points | points_obtenus | got
     return g.get("points", g.get("points_obtenus", g.get("got", 0.0)))
 
+
 def _g_points_total(g):
     # item de grade – supporte: points_possible | points_total | total
     return g.get("points_possible", g.get("points_total", g.get("total", 0.0)))
 
+
 def _g_comment(g):
     # item de grade – supporte: comment | remarque
     return g.get("comment", g.get("remarque", ""))
+
 
 def _grades_totals(grades_dict):
     """
@@ -89,11 +95,13 @@ def _grades_totals(grades_dict):
         return grades_dict["total_got"], grades_dict["total_points"]
     return 0.0, 0.0
 
+
 def _read_json_or_passthrough(x):
     # accepte dict/list OU chemin -> retourne l'objet JSON
     if isinstance(x, (dict, list)):
         return x
     return json.loads(Path(x).read_text(encoding="utf-8"))
+
 
 def _norm_str(x):
     # Convertit tout en str sûr, strip+lower
@@ -278,33 +286,35 @@ def identify_content(image_paths: List[str]) -> List[Dict[str, Any]]:
     - The model must produce **only valid JSON** following the structure above.
     """
 
-    images = [{"type": "image_url", "image_url": {"url": img_to_data_url(Path(path))}} for path in image_paths]
+    images = [
+        {"type": "image_url", "image_url": {"url": img_to_data_url(Path(path))}}
+        for path in image_paths
+    ]
     start = time.perf_counter()
 
     resp = client.chat.completions.create(
         model=MODEL_VISION,
         response_format={"type": "json_object"},
         messages=[
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT
-            },
+            {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": [{"type": "text", "text": "Analyze this quiz"}] + images,
             },
-        ]
+        ],
         # temperature=0
     )
     end = time.perf_counter()
     elapsed = end - start  # secondes (float)
 
-    print(f"    - Prompt tokens: {resp.usage.prompt_tokens}\n"
-          f"    - Completion tokens: {resp.usage.completion_tokens}\n"
-          f"    - Total tokens: {resp.usage.total_tokens}"
-          f"    - Time elapsed: {elapsed:.2f} seconds"
+    print(
+        f"    - Prompt tokens: {resp.usage.prompt_tokens}\n"
+        f"    - Completion tokens: {resp.usage.completion_tokens}\n"
+        f"    - Total tokens: {resp.usage.total_tokens}"
+        f"    - Time elapsed: {elapsed:.2f} seconds"
     )
     return json.loads(resp.choices[0].message.content)
+
 
 # ---------- 3) Vision sur images (par PDF) ----------
 def grading(analysis: str, solutions: str) -> Dict[str, Any]:
@@ -383,31 +393,32 @@ def grading(analysis: str, solutions: str) -> Dict[str, Any]:
     - The model must produce **only valid JSON** following the structure above.
     """
 
-    images = [{"type": "image_url", "image_url": {"url": img_to_data_url(Path(path))}} for path in image_paths]
+    images = [
+        {"type": "image_url", "image_url": {"url": img_to_data_url(Path(path))}}
+        for path in image_paths
+    ]
     start = time.perf_counter()
 
     resp = client.chat.completions.create(
         model=MODEL_VISION,
         response_format={"type": "json_object"},
         messages=[
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT
-            },
+            {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": [{"type": "text", "text": "Analyze this quiz"}] + images,
             },
-        ]
+        ],
         # temperature=0
     )
     end = time.perf_counter()
     elapsed = end - start  # secondes (float)
 
-    print(f"    - Prompt tokens: {resp.usage.prompt_tokens}\n"
-          f"    - Completion tokens: {resp.usage.completion_tokens}\n"
-          f"    - Total tokens: {resp.usage.total_tokens}"
-          f"    - Time elapsed: {elapsed:.2f} seconds"
+    print(
+        f"    - Prompt tokens: {resp.usage.prompt_tokens}\n"
+        f"    - Completion tokens: {resp.usage.completion_tokens}\n"
+        f"    - Total tokens: {resp.usage.total_tokens}"
+        f"    - Time elapsed: {elapsed:.2f} seconds"
     )
     return json.loads(resp.choices[0].message.content)
 
@@ -457,7 +468,6 @@ def run_grading_all(
         out_map[pdf] = str(out_json)
         print(f"[4] Écrit → {out_json}")
     return out_map
-
 
 
 # ---------- 6) Résumé ----------

@@ -1,0 +1,62 @@
+{
+  "name": "",
+  "date": "",
+  "page": "",
+  "questions": [
+    {
+      "id": 2,
+      "page": "",
+      "kind": "single",
+      "question_text": "2. Que signifie REPL en Python ?",
+      "choices": [
+        {
+          "text": "Runtime Environment for Python Libraries, utilisé pour exécuter des modules Python",
+          "mark": "none",
+          "relative_position": "top",
+          "comment": "",
+          "analysis": "Printed circle to the left appears empty; no visible pen or pencil marks on or near this choice."
+        },
+        {
+          "text": "Resource Evaluation Processing Loop, principalement utilisé dans les systèmes embarqués",
+          "mark": "cross",
+          "relative_position": "middle",
+          "comment": "blue 'X' inside the circle",
+          "analysis": "A blue ink cross is drawn within the left circle; the cross lines slightly extend to the inner edges of the circle."
+        },
+        {
+          "text": "Read-Eval-Print Loop, utile pour tester rapidement des instructions Python",
+          "mark": "none",
+          "relative_position": "middle",
+          "comment": "",
+          "analysis": "Left circle appears empty; no ticks, crosses, or other marks visible."
+        },
+        {
+          "text": "Repetitive Execution Program Library, déconseillé pour les débutants",
+          "mark": "ambiguous",
+          "relative_position": "middle",
+          "comment": "blue scribble over the circle area",
+          "analysis": "Dense blue hatching/scribble overlapping the left circle and beginning of the choice text; multiple short diagonal strokes obscure the circle, not clearly a cross, tick, fill, or straight strikethrough."
+        },
+        {
+          "text": "Real-time Execution Programming Language, utilisé pour les applications temps réel",
+          "mark": "none",
+          "relative_position": "middle",
+          "comment": "",
+          "analysis": "Left circle appears empty; no visible markings."
+        },
+        {
+          "text": "Built-in Data Function Library",
+          "mark": "none",
+          "relative_position": "bottom",
+          "comment": "",
+          "analysis": "Left circle appears empty; no visible markings."
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Apart from the cross in the second option and the scribble covering the fourth option's left area, no other handwritten notes, arrows, or shapes are visible around this question."
+      }
+    }
+  ]
+}

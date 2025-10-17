@@ -1,0 +1,280 @@
+{
+  "name": "",
+  "date": "",
+  "page": 2,
+  "questions": [
+    {
+      "id": 1,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Python est un langage qui a été créé par Guido van Rossum en 1991. Guido van Rossum est souvent appelé le BDFL de Python. Que signifie BDFL ?",
+      "choices": [
+        {
+          "text": "Big Data Friendly Language",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible près du cercle imprimé."
+        },
+        {
+          "text": "Best Data Format Language",
+          "mark": "circle",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Un cercle bleu tracé autour de la bulle imprimée; léger décalage mais clairement dessiné sur cette option."
+        },
+        {
+          "text": "Benevolent Dictator For Life",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "Bold Decision for Life",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "Basic Data Flow Language",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "Built-in Data Function Library",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Seule l’option « Best Data Format Language » présente un cerclage bleu; aucune autre marque sur la question."
+      }
+    },
+    {
+      "id": 2,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Que signifie REPL en Python ?",
+      "choices": [
+        {
+          "text": "Runtime Environment for Python Libraries, utilisé pour exécuter des modules Python",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "Resource Evaluation Processing Loop, principalement utilisé dans les systèmes embarqués",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "Read-Eval-Print Loop, utile pour tester rapidement des instructions Python",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque; les traits en X de l’option suivante effleurent légèrement la zone à gauche mais ne couvrent pas la bulle de cette ligne."
+        },
+        {
+          "text": "Repetitive Execution Program Library, déconseillé pour les débutants",
+          "mark": "cross",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Deux larges traits bleus diagonaux formant un X tracés sur la zone de la bulle de cette option; les traits débordent légèrement vers le haut."
+        },
+        {
+          "text": "Real-time Execution Programming Language, utilisé pour les applications temps réel",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "Built-in Data Function Library",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Grand X bleu sur la quatrième option; aucune autre marque."
+      }
+    },
+    {
+      "id": 3,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Quel est le programme utilisé préférablement pour utiliser Python comme calculatrice en ligne de commande ?",
+      "choices": [
+        {
+          "text": "calc",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "python",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "qpython",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "ipython",
+          "mark": "tick",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Un petit coche bleu est tracé juste à droite de la bulle imprimée; pas de cerclage."
+        },
+        {
+          "text": "jupyter",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "notebook",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un coche bleu sur « ipython » uniquement."
+      }
+    },
+    {
+      "id": 4,
+      "page": 2,
+      "kind": "fillin",
+      "question_text": "Inscrire après chaque syntaxe Python le type correspondant à l’expression.",
+      "choices": [],
+      "annotations": {
+        "text": "1. liste\n2. set\n3. dictionaire\n4. a tuple\n5. comprehension\ngenerator !",
+        "drawings": "Plusieurs traits d’underline bleus sous les mots écrits aux items 1 à 4; quelques traits et ratures courts près de l’item 5.",
+        "analysis": "Du texte manuscrit bleu est présent après chaque item. Lisible: « liste » (1), « set » (2), « dictionaire » (3), « a tuple » (4), puis à droite de l’item 5 les mots « comprehension » et « generator ! ». Du texte manuscrit supplémentaire est présent à l’item 6 mais illisible sur l’image. Aucun encadrement des zones, seulement des soulignements et petites ratures près de l’item 5."
+      }
+    },
+    {
+      "id": 5,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Quel est la sortie du code suivant \"12314231423225\".split(\"3\") ?",
+      "choices": [
+        {
+          "text": "['12314231421225']",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "['1', '2', '4', '2', '1', '2', '25']",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "(1,2,3,4,2,3,1,4,2,3,2,2,5)",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "Segmentation fault",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "['12', '142', '142', '225']",
+          "mark": "circle",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Un cercle bleu dessiné autour de la bulle de cette option; pas d’autres marques autour."
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un cerclage bleu sur la dernière option (colonne de gauche, troisième ligne)."
+      }
+    },
+    {
+      "id": 6,
+      "page": 2,
+      "kind": "single",
+      "question_text": "Je souhaite importer la fonction sqrt sans polluer l’espace de nom courant de mon programme quelle est la bonne commande ?",
+      "choices": [
+        {
+          "text": "import sqrt",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "from math import sqrt",
+          "mark": "cross",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Un X bleu tracé sur ou très près de la bulle imprimée de cette option; lignes obliques visibles."
+        },
+        {
+          "text": "from sqrt import math",
+          "mark": "none",
+          "relative_position": "left",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "using math.sqrt",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        },
+        {
+          "text": "from math import *",
+          "mark": "none",
+          "relative_position": "right",
+          "comment": "",
+          "analysis": "Aucune marque visible."
+        }
+      ],
+      "annotations": {
+        "text": "",
+        "drawings": "",
+        "analysis": "Un X bleu uniquement sur « from math import sqrt »; aucune autre marque."
+      }
+    }
+  ]
+}

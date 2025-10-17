@@ -10,7 +10,7 @@ PDF_INPUT = Path("pdfs/2025-10-16-14-46-25.pdf")
 PDF_OUTPUT = Path("mon_quiz_corrige.pdf")
 FONT_HAND_PATH = Path("fonts/HomemadeApple-Regular.ttf")
 
-penColor = (0.63921569, 0.0627451 , 0.0627451)
+penColor = (0.63921569, 0.0627451, 0.0627451)
 
 # --- coordonnées en mm ---
 marks = [
@@ -36,6 +36,7 @@ c.setFont("Helvetica", 12)  # fallback
 try:
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
+
     pdfmetrics.registerFont(TTFont("HandFont", str(FONT_HAND_PATH)))
     c.setFont("HandFont", 14)
 except Exception as e:
@@ -44,15 +45,17 @@ except Exception as e:
 # convertir coordonnées : A4 = 210×297 mm
 width, height = A4
 
+
 def mm_to_pts(x, y):
     """Convertit mm (origine en haut-gauche) → pts (origine en bas-gauche)."""
     return x * mm, height - y * mm
+
 
 # --- texte dans mark anchors ---
 for m in marks:
     x, y = mm_to_pts(m["x"], m["y"])
     c.setFillColorRGB(*penColor)
-    c.drawCentredString(x + (m.get("w", 10)/2)*mm, y, m["text"])
+    c.drawCentredString(x + (m.get("w", 10) / 2) * mm, y, m["text"])
 
 # --- feedbacks ---
 for f in feedbacks:
@@ -78,13 +81,13 @@ circles_in_a4_corners = [
     {"x": 10, "y": 10},
     {"x": 200, "y": 287},
     {"x": 10, "y": 287},
-    {"x": 200, "y": 10}
+    {"x": 200, "y": 10},
 ]
 for circ in circles_in_a4_corners:
     x, y = mm_to_pts(circ["x"], circ["y"])
-    r = (5 * mm)
+    r = 5 * mm
     c.setFillColorRGB(0.5, 0.8, 0.1)
-    c.circle(x , y , r)
+    c.circle(x, y, r)
 
 
 c.showPage()

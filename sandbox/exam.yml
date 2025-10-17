@@ -1,0 +1,266 @@
+schema_version: "1.0"
+meta:
+  title: "Quiz Python"
+  subtitle: "QZ-01"
+  code: "QZ-01"
+  author: "Prof. Yves Chevallier"
+  department: "Département TIN"
+  school: "Haute École d'Ingénierie et de Gestion du Canton de Vaud"
+  date: "2025-10-08"
+  locale: "fr-CH"
+  python_version: "3.10"
+  directives:
+    - "Écrire votre nom et votre prénom sur la première page."
+    - "Écrire lisiblement, au stylo ou au crayon à papier gras."
+    - "Répondre aux questions dans les espaces appropriés."
+    - "Relire toutes vos réponses avant de rendre votre travail."
+    - "Rendre toutes les feuilles de ce quiz."
+    - "Aucun moyen de communication autorisé."
+    - "Toutes les réponses concernent le langage Python 3.10."
+  randomization:
+    shuffle_questions: false
+    shuffle_choices: true
+  grading:
+    default_points: 1
+    negative_points: false # No negative points for wrong answers
+    partial_credit: "proportional"
+
+questions:
+  - type: multiple_choice
+    question: >
+      Python est un langage qui a été créé par Guido van Rossum en 1991.
+      Guido van Rossum est souvent appelé le BDFL de Python. Que signifie BDFL ?
+    choices:
+      - Big Data Friendly Language
+      - Best Data Format Language
+      - Benevolent Dictator For Life
+      - Bold Decision for Life
+      - Basic Data Flow Language
+      - Built-in Data Function Library
+    correct_choices: [3]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: Que signifie REPL en Python ?
+    choices:
+      - Runtime Environment for Python Libraries, utilisé pour exécuter des modules Python
+      - Resource Evaluation Processing Loop, principalement utilisé dans les systèmes embarqués
+      - Read-Eval-Print Loop, utile pour tester rapidement des instructions Python
+      - Repetitive Execution Program Library, déconseillé pour les débutants
+      - Real-time Execution Programming Language, utilisé pour les applications temps réel
+      - Built-in Data Function Library
+    correct_choices: [3]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Quel est le programme utilisé préférablement pour utiliser Python comme calculatrice en ligne de commande ?"
+    choices: ["calc", "python", "ipython", "qpython", "jupyter", "notebook"]
+    correct_choices: [3]
+    allow_multiple: false
+    points: 1
+
+  - id: q5
+    type: multiple_fill_in
+    question: |
+      Inscrire après chaque syntaxe Python le type correspondant à l'expression.
+
+      $$\sqrt{2}$$
+    items:
+      - { prompt: "`[1]`",                        answer: "liste" }
+      - { prompt: "`{1}`",                        answer: "set" }
+      - { prompt: "`{1:2}`",                      answer: "dictionnaire" }
+      - { prompt: "`(1,2)`",                      answer: "tuple" }
+      - { prompt: "`(i for i in range(3))`",      answer: "générateur" }
+      - { prompt: "`'abc'`",                      answer: "chaine de caractères" }
+    fill_width: 30
+    points: 1
+
+  - type: multiple_choice
+    question: 'Quel est la sortie du code suivant `"12314231423225".split("3")` ?'
+    choices:
+      - "`['12314231421225']`"
+      - "`['1', '2', '4', '2', '1', '2', '25']`"
+      - "`['12', '142', '142', '225']`"
+      - "`{1,2,3,4,2,3,1,4,2,3,2,2,5}`"
+      - "Segmentation fault"
+    correct_choices: [3]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: >
+      Je souhaite importer la fonction `sqrt` sans polluer l'espace de nom courant
+      de mon programme quelle est la bonne commande ?
+    choices:
+      - "`import sqrt`"
+      - "`from math import sqrt`"
+      - "`from sqrt import math`"
+      - "`using math.sqrt`"
+      - "`from math import *`"
+    correct_choices: [2]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Python est un langage à typage dynamique. Qu'est-ce que cela signifie ?"
+    choices:
+      - Les variables doivent avoir un type spécifié avant utilisation
+      - Le type d'une variable est déterminé automatiquement au moment de l'exécution
+      - Python n'alloue que des variables de type entier
+      - Python utilise des types fixes comme dans C
+    correct_choices: [2]
+    allow_multiple: false
+    points: 1
+
+  - type: short_answer
+    question: >
+      Les modèles de données en Python définissent des comportements spécifiques
+      pour les objets. Quelle méthode spéciale est typiquement appelée à l'initialisation
+      d'une instance de classe ?
+    answer: "__init__"
+    text_check: { case_sensitive: false }
+    points: 1
+
+  - type: multiple_fill_in
+    question: "Quelles sont les deux méthodes spéciales utilisées pour obtenir un itérateur et l'utiliser ?"
+    items:
+      - "__iter__"
+      - "__next__"
+    strict_order: false
+    fill_width: 30
+    points: 1
+
+  - type: fill_in_the_blank
+    question: "Quels sont les noms souvent utilisés pour définir 1. les actions d'un objet et 2. les variables d'état d'un objet ?"
+    items:
+      - "méthdodes"
+      - "attributs"
+    strict_order: false
+    fill_width: 30
+    points: 1
+
+  - type: multiple_choice
+    question: "Quelle est la meilleure définition de `self` en Python ?"
+    choices:
+      - C'est un mot clé qui permet de définir une fonction
+      - C'est un mot clé qui permet de définir une variable
+      - C'est un mot clé utilisé dans les décorateurs
+      - C'est une convention pour référencer l'instance de la classe actuelle dans une méthode
+    correct_choices: [4]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Le mot clé `next` est utilisé dans quel contexte en Python ?"
+    choices:
+      - Pour sauter une itération dans une boucle `for`
+      - Pour obtenir le prochain élément d'un itérateur
+      - Pour obtenir le prochain élément d'un dictionnaire
+      - Pour arrêter une boucle `for`
+    correct_choices: [2]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: |
+      Quelle est la valeur de `x` après l'exécution du code suivant ?
+      ```python
+      u = {1: 20, 3: 40, 5: 60}
+      x = len(u)
+      ```
+    choices: [20, 3, 4, 5, 6, 40, 60]
+    correct_choices: [2]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: |
+      Que sera affiché sur la sortie standard ?
+      ```python
+      x = [1, 2, 3]
+      y = x
+      y.append(4)
+      print(x)
+      ```
+    choices:
+      - "`[3, 2, 1]`"
+      - "`[1, 2, 3]`"
+      - "`[1, 2, 3, 4]`"
+      - "`[1, 2, 3, 4, 4]`"
+      - "`[1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3]`"
+      - "`None`"
+    correct_choices: [3]
+    allow_multiple: false
+    points: 1
+
+  - type: short_answer
+    question: |
+      Quelle est la valeur affichée sur la sortie standard ?
+      ```python
+      def foo(a, b=2, c=3):
+          return a - b * c
+
+      result = foo(5, c=10)
+      print(result)
+      ```
+    answer: "-15"
+    points: 1
+
+  - type: multiple_choice
+    question: |
+      Que voyez-vous sur la sortie standard ?
+      ```python
+      u = [1, 2, 3, 4, 5]
+      print([n**2 for n in u if n % 2 == 0])
+      ```
+    choices:
+      - "`[1, 4, 9, 16, 25]`"
+      - "`[1, 9, 25]`"
+      - "`[1, 2, 3, 4, 5]`"
+      - "`[4, 16]`"
+    correct_choices: [4]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "À quoi sert le module pip en Python ?"
+    choices:
+      - Compiler du code Python
+      - Gérer les dépendances et automatiser la création d'environnements virtuels pour Python
+      - Installer des modules Python depuis le terminal
+      - Optimiser les performances du code
+      - Relier la sortie standard d'un programme à un autre
+    correct_choices: [3]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Quel est le type de `**kwargs` dans la signature d'une fonction Python ?"
+    choices: ["Une liste", "Un dictionnaire", "Un set", "Un tuple"]
+    correct_choices: [2]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Quelle est la différence principale entre une liste et un tuple en Python ?"
+    choices:
+      - Une liste est immuable, un tuple est mutable
+      - Un tuple est immuable, une liste est mutable
+      - Une liste peut contenir des types différents, un tuple ne peut contenir qu'un seul type
+      - Un tuple peut contenir des types différents, une liste ne peut contenir qu'un seul type
+    correct_choices: [2]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Quel est l'intérêt principal d'utiliser des environnements virtuels en Python ?"
+    choices:
+      - Améliorer les performances d'exécution des scripts Python
+      - Isoler les dépendances de projets Python pour éviter les conflits entre versions de paquets
+      - Permettre l'exécution de scripts Python sur des systèmes d'exploitation différents
+      - Faciliter le déploiement de scripts Python sur des serveurs distants
+    correct_choices: [2]
+    allow_multiple: false
+    points: 1
