@@ -13,9 +13,17 @@ dependencies = [
     "typer (>=0.19.2,<0.20.0)",
     "pymupdf (>=1.26.5,<2.0.0)",
     "reportlab (>=4.4.4,<5.0.0)",
-    "svglib (>=1.6.0,<2.0.0)"
+    "svglib (>=1.6.0,<2.0.0)",
+    "pydantic (>=2.12.3,<3.0.0)"
 ]
 
+[tool.poetry]
+packages = [
+    { include = "quiz_ai" }
+]
+
+[tool.pylint.format]
+max-line-length = 120
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
