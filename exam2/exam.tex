@@ -42,7 +42,6 @@
 
 \thispagestyle{empty}
 
-
 \title{Quiz Python\\ QZ-01}
 
 \author{Prof. Yves Chevallier}
@@ -51,36 +50,6 @@
 
 \date{8 octobre 2025}
 
-
-% \makeatletter
-% % % \qformat{\Hy@raisedlink{\hypertarget{Q\thequestion-anchor}{}}\thequestion. \ }
-% % %\def\qformat{\thequestion. \ }
-% \qformat{\leavevmode\makebox[0pt][l]{\Hy@raisedlink{\hypertarget{Q\thequestion-anchor}{}}}\thequestion.\ }
-
-% \makeatother
-% \makeatletter
-% \qformat{\leavevmode\rlap{\hyper@anchorstart{Q\thequestion-anchor}\hyper@anchorend}\thequestion.\ }%
-% \makeatother
-
-% \makeatletter
-% \AtBeginEnvironment{questions}{%
-%   % Préfixer \question une fois que l'env a installé sa version
-%   \pretocmd{\question}{%
-%     \leavevmode
-%     \edef\qnext{\number\numexpr\value{question}+1\relax}%
-%     % ancre PDF, largeur nulle, collée au début de la ligne
-%     \rlap{\hyper@anchorstart{Q\qnext-anchor}\hyper@anchorend}%
-%   }{}{}%
-% }
-% \makeatother
-
-% \makeatletter
-% \qformat{%
-%   %\leavevmode\rlap{\hyper@anchorstart{Q\thequestion-anchor}\hyper@anchorend}%
-%   \thequestion.\ %
-% }%
-% \makeatother
-
 \makeatletter
 \renewcommand{\questionlabel}{%
   \Hy@raisedlink{\hypertarget{Q\thequestion-anchor}{}}%
@@ -88,18 +57,11 @@
 }
 \makeatother
 
-%\qformat{\thequestion. \ \ignorespaces}
-
 \begin{document}
 
 \begin{coverpages}
     \maketitle
     \thispagestyle{empty}
-
-    % \begin{center}
-    %     \vskip 2em
-    %     \gradetable
-    % \end{center}
 
     \vspace{0.1in}
 

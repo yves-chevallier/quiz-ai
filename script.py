@@ -216,21 +216,21 @@ def build_artifacts(pdfs: List[Path], force: bool = False) -> Dict[str, List[str
     return artifacts
 
 
-# ---------- 3) Vision sur images (par PDF) ----------
-def analyze_images_for_pdf(image_paths: List[str]) -> List[Dict[str, Any]]:
+def identify_content(image_paths: List[str]) -> List[Dict[str, Any]]:
     """
-    Retourne une liste de pages JSON (une entrée par page).
+    Identifie strictement le contenu et l'annotation des pages d'un quiz manuscrit.
     """
-    pages_data = []
-    SYSTEM_PROMPT = """
-    You are an impartial and precise human corrector.
 
-    Your role is to analyze a scanned or photographed handwritten quiz page
-    and extract structured information about the student's answers.
+    SYSTEM_PROMPT = """
+    You are an impartial and precise human anyliser.
+
+    Your role is to analyze a scanned handwritten quiz page with printed questions
+    and handwritten content. You should extract structured information with no omissions.
+    You are not allowed to make assumptions beyond what is visually present on the page.
 
     ## Task
     You must visually interpret each provided image (A4 page, 210×297 mm)
-    and return a **strict JSON object** describing the page and all its questions.
+    and return a **strict JSON object** describing what you see for each question.
 
     Do not return text explanations — only valid JSON.
 
@@ -239,22 +239,20 @@ def analyze_images_for_pdf(image_paths: List[str]) -> List[Dict[str, Any]]:
     ## JSON Structure
 
     {
-    "name": "string, usually top right after 'Nom:'",
-    "date": "string, centered under title, format YYYY-MM-DD",
-    "title": "string, centered on first page",
-    "mark_anchor": {"x": int, "y": int},
-    "questions": [
+    "name": "string of the student, usually top right after 'Nom:' if present or else empty",
+    "date": "string, centered under title, format YYYY-MM-DD if present or else empty",
+    "page": "page number 1-based usually found at the bottom with 'Page X of Y' or else empty",
+    "questions": [ // For each question found on the page.
         {
         "id": int,                       // Question number (1-based)
         "page": int,                     // Page index (1-based)
         "kind": "single|multi|fillin|open",
-        "selected_options": [string],    // Exact text of options checked/selected
-        "handwriting": "string",         // Transcribed handwritten answer, notes, or drawings
-        "remark": "string",              // Analysis notes (strikethroughs, corrections, etc.)
-        "confidence": float,             // Between 0 and 1
-        "mark_anchor": {"x": int, "y": int, "w": int, "h": int},   // 1x1 cm area for marking
-        "feedback_box": {"x": int, "y": int, "w": int, "h": int},  // Largest free space for remarks
-        "question_anchor": {"x": int, "y": int}                    // Position of the question area
+        "question_text": "string",      // Full text of the question
+        "choices": [string],            // All options text (for mcq/multi)
+        "annotations": {
+          "text": "string",          // Any notes exactly handwritten by the student concerning the question
+          "drawings": "string",        // Description of any drawings/sketches made by the student
+          "analysis": "string",       // Any corrections, strikethroughs you observe and describe what options are selected with reasoning and justification
         }
     ]
     }
@@ -265,17 +263,10 @@ def analyze_images_for_pdf(image_paths: List[str]) -> List[Dict[str, Any]]:
 
     - Each image is one full A4 page (210×297 mm).
     - Page index can be confirmed by counting "Page X of Y" if present.
-    - All coordinates are in **millimeters**, relative to the top-left corner of the page.
-    - Coordinates and dimensions are **integers (rounded millimeters)**.
-    - Anchors must stay within page boundaries, at least 5 mm from edges.
     - If data is unclear or absent, leave fields empty (e.g. "").
     - Include **all questions**, even unanswered ones.
     - Accurately transcribe all handwritten content (text, formulas, drawings).
-    - For multiple-choice: detect **checked options**, and exclude **crossed-out** ones.
-    - For fill-in or open: include exact handwritten response or describe drawing.
     - Maintain a **formal and neutral tone** in remarks.
-    - Do not include a remark if not necessary, leave it as an empty string.
-    - Confidence set to 1.0 if absolutely certain, 0.0 if guessing.
     - The output must be a single valid JSON object — **no extra text**.
 
     ---
@@ -298,22 +289,111 @@ def analyze_images_for_pdf(image_paths: List[str]) -> List[Dict[str, Any]]:
                 "role": "system",
                 "content": SYSTEM_PROMPT
             },
-            # {
-            #     "role": "user",
-            #     "content": [
-            #         {
-            #             "type": "text",
-            #             "text": (
-            #                 "Before giving you the student work, here a "
-            #                 "reference data: this is the official answer key JSON. "
-            #                 "Use it only for *cross-checking correctness* and do NOT copy it into the output. "
-            #                 "If something is ambiguous on the page, prefer the handwriting. "
-            #                 "Keep remarks empty unless needed."
-            #             ),
-            #         },
-            #         {"text": json.dumps(solutions, ensure_ascii=False)}
-            #     ],
-            # },
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": "Analyze this quiz"}] + images,
+            },
+        ]
+        # temperature=0
+    )
+    end = time.perf_counter()
+    elapsed = end - start  # secondes (float)
+
+    print(f"    - Prompt tokens: {resp.usage.prompt_tokens}\n"
+          f"    - Completion tokens: {resp.usage.completion_tokens}\n"
+          f"    - Total tokens: {resp.usage.total_tokens}"
+          f"    - Time elapsed: {elapsed:.2f} seconds"
+    )
+    return json.loads(resp.choices[0].message.content)
+
+# ---------- 3) Vision sur images (par PDF) ----------
+def grading(analysis: str, solutions: str) -> Dict[str, Any]:
+    """
+    Retourne une liste de pages JSON (une entrée par page).
+    """
+
+    SYSTEM_PROMPT = """
+    You are an impartial and precise human corrector.
+
+    Your role is to analyze a summary of a scanned handwritten quiz page
+    with printed questions and determine exactly what the student answered if the answers are correct or not.
+
+    ## Task
+    From the provided JSON analysis and the JSON answer key, build a **strict JSON object**
+
+    Do not return text explanations — only valid JSON.
+
+    ---
+
+    ## Input analysis JSON Structure
+
+    {
+    "name": "string of the student, usually top right after 'Nom:' if present or else empty",
+    "date": "string, centered under title, format YYYY-MM-DD if present or else empty",
+    "page": "page number 1-based usually found at the bottom with 'Page X of Y' or else empty",
+    "questions": [ // For each question found on the page.
+        {
+        "id": int,                       // Question number (1-based)
+        "page": int,                     // Page index (1-based)
+        "kind": "single|multi|fillin|open",
+        "question_text": "string",      // Full text of the question
+        "choices": [string],            // All options text (for mcq/multi)
+        "annotations": {
+          "text": "string",          // Any notes exactly handwritten by the student concerning the question
+          "drawings": "string",        // Description of any drawings/sketches made by the student
+          "analysis": "string",       // Any corrections, strikethroughs you observe and describe what options are selected with reasoning and justification
+        }
+    ]
+    }
+
+    ## Output JSON Structure
+
+    {
+    "name": "student name",
+    "date": "exam date in YYYY-MM-DD format",
+    "title": "exam title",
+    "total_questions": int,
+    "correct_answers": int,
+    "grade": float,  // Computed from granted points over total points * 5 + 1, rounded to 0.1
+    "questions": [
+        {
+        "id": int,                       // Question number (1-based)
+        "answered": bool,               // Whether the student provided an answer
+        "correct": bool,                // Whether the answer is correct
+        "granted_points": float,        // Points awarded for this question 0..1, depending on how many subparts are correct
+        "remark": "string",              // Relevant summary of analysis notes (strikethroughs, corrections, text not readable, etc.)
+        "confidence": float,             // Between 0 and 1 indicating your confidence in the correctness of the evaluation based on reasoning
+        }
+    ]
+    }
+
+    ---
+
+    ## Rules & Constraints
+
+    - Maintain a **formal and neutral tone** in remarks.
+    - The output must be a single valid JSON object — **no extra text**.
+
+    ---
+
+    ## Output Policy
+
+    - Never return Markdown or explanations.
+    - Never add comments or narrative text.
+    - The model must produce **only valid JSON** following the structure above.
+    """
+
+    images = [{"type": "image_url", "image_url": {"url": img_to_data_url(Path(path))}} for path in image_paths]
+    start = time.perf_counter()
+
+    resp = client.chat.completions.create(
+        model=MODEL_VISION,
+        response_format={"type": "json_object"},
+        messages=[
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT
+            },
             {
                 "role": "user",
                 "content": [{"type": "text", "text": "Analyze this quiz"}] + images,
@@ -355,77 +435,6 @@ def run_analysis_all_pdfs(
     return mapping
 
 
-def grade_student_via_model(solutions_in, student_data_in, model="gpt-4o"):
-    """
-    Accepte soit des chemins, soit des objets Python (dict/list).
-    Retour JSON avec:
-      grades: [{number, total, got, status, comment}]
-      total_points, total_got, score
-    """
-    sol_obj = _read_json_or_passthrough(solutions_in)
-    stu_obj = _read_json_or_passthrough(student_data_in)
-
-    prompt = """
-    Tu es un correcteur expérimenté chargé d'évaluer un étudiant.
-    On te fournit deux JSON :
-      1. solutions.json : les questions, types, réponses correctes et points.
-      2. student_data.json : les réponses de l'étudiant (cases cochées, manuscrit, etc.).
-
-    Règles :
-    - Bonne réponse → points complets.
-    - Partielle → points proportionnels.
-    - Fausse/absente → 0.
-    - Ajoute une remarque courte par question.
-
-    Réponds UNIQUEMENT avec :
-    {
-      "grades": [
-        {"number": <int>, "total": <float>, "got": <float>, "status": "correct"|"partial"|"wrong"|"absent", "comment": "<str>"}
-      ],
-      "total_points": <float>,
-      "total_got": <float>,
-      "score": <float>,  // (total_got / total_points * 5 + 1), arrondi 0,1
-      "comment": "<str>",
-      "need_human_review": <true|false>
-    }
-    """
-
-    resp = client.chat.completions.create(
-        model=model,
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": "Tu es un correcteur humain impartial et précis."},
-            {"role": "user", "content": [
-                {"type": "text", "text": prompt},
-                {"type": "text", "text": "solutions.json = ```json\n" + json.dumps(sol_obj, ensure_ascii=False, indent=2) + "\n```"},
-                {"type": "text", "text": "student_data.json = ```json\n" + json.dumps(stu_obj, ensure_ascii=False, indent=2) + "\n```"}
-            ]}
-        ],
-        temperature=0
-    )
-    data = json.loads(resp.choices[0].message.content)
-
-    # Garde-fous (si le modèle n'a pas calculé)
-    if "grades" not in data:
-        data["grades"] = []
-    if "total_points" not in data:
-        data["total_points"] = round(sum(float(it.get("total", it.get("points_total", it.get("points_possible", 0)))) for it in data["grades"]), 3)
-    if "total_got" not in data:
-        data["total_got"] = round(sum(float(it.get("got", it.get("points_obtenus", it.get("points", 0)))) for it in data["grades"]), 3)
-    if "score" not in data:
-        tot = data["total_points"] or 0.0
-        got = data["total_got"] or 0.0
-        data["score"] = round(((got / tot) * 5 + 1), 1) if tot else 1.0
-
-    # Compat top-level avec ton pipeline existant (note/got/total)
-    data.setdefault("note", data["score"])
-    data.setdefault("got", data["total_got"])
-    data.setdefault("total", data["total_points"])
-
-    return data
-
-
-
 def run_grading_all(
     solutions: Dict[str, Any], student_json_map: Dict[str, str], force: bool = False
 ) -> Dict[str, str]:
@@ -449,84 +458,6 @@ def run_grading_all(
         print(f"[4] Écrit → {out_json}")
     return out_map
 
-
-# ---------- 5) Annotation PDF ----------
-def annotate_pdf(pdf_path: Path, pages_data: List[Dict[str, Any]], grades: Dict[str, Any], out_path: Path):
-    doc = fitz.open(str(pdf_path))
-    grade_by_num = { str(g["number"]): g for g in grades["grades"] }
-
-    # Prépare l’usage de la police manuscrite (si présente)
-    font_kwargs_text = {}
-    if _has_hand_font():
-        font_kwargs_text["fontfile"] = str(FONT_HAND_PATH)
-
-    for idx, page in enumerate(doc, start=1):
-        page_data = next((p for p in pages_data if p.get("page_index")==idx), None)
-        y = 50
-        if page_data:
-            # ---- NOTE FINALE ----
-            if idx == 1:
-                note_anchor = page_data.get("note_anchor")
-                pts_got_all, pts_tot_all = _grades_totals(grades)
-                note_val = grades.get("note")
-                if note_val is None and pts_tot_all:
-                    note_val = round(((pts_got_all / pts_tot_all) * 5 + 1), 1)
-                label = f"Note finale : {note_val}/6" if note_val is not None else "Note finale : (indisponible)"
-
-                if isinstance(note_anchor, dict) and all(k in note_anchor for k in ("x","y","w","h")):
-                    _place_note_label(page, note_anchor, label)
-                else:
-                    page.insert_text((420, 100), label, fontsize=18, color=(1,0,0), **font_kwargs_text)
-
-            # ---- ANNOTATIONS PAR QUESTION ----
-            for q in page_data.get("questions", []):
-                num = str(q.get("number"))
-                g = grade_by_num.get(num)
-                if not g:
-                    continue
-
-                pts_got = _g_points_got(g)       # au lieu de g['points'] ou g['points_obtenus'] ou g['got']
-                pts_tot = _g_points_total(g)     # idem
-                comment = _g_comment(g)          # idem
-
-                # Pour la note affichée :
-                pts_got_all, pts_tot_all = _grades_totals(grades)
-                note_val = grades.get("note", grades.get("score"))
-                if note_val is None and pts_tot_all:
-                    note_val = round(((pts_got_all / pts_tot_all) * 5 + 1), 1)
-
-                # Attention : Homemade Apple n’a pas toujours tous les glyphes (✓/✗/≈).
-                # On garde les symboles; si glyph manquant, PyMuPDF fera un fallback. Autrement, on peut remplacer par "OK" / "X" / "~".
-                sym = "✓" if pts_tot and pts_got == pts_tot else ("≈" if pts_got and pts_got > 0 else "✗")
-                text = f"Q{num} {sym}  {pts_got}/{pts_tot}  – {comment}"
-
-                mk = q.get("mark_anchor") or {}
-                if isinstance(mk, dict) and "x" in mk and "y" in mk:
-                    page.insert_text((float(mk["x"]), float(mk["y"])), text, fontsize=12, color=(1,0,0), **font_kwargs_text)
-                else:
-                    page.insert_text((50, y), text, fontsize=12, color=(1,0,0), **font_kwargs_text)
-                    y += 18
-
-                fb = q.get("feedback_box")
-                if isinstance(fb, dict) and all(k in fb for k in ("x","y","w","h")):
-                    rect = fitz.Rect(float(fb["x"]), float(fb["y"]),
-                                     float(fb["x"])+float(fb["w"]), float(fb["y"])+float(fb["h"]))
-                    page.draw_rect(rect, color=(1,0,0), width=1)
-
-    doc.save(str(out_path))
-
-def annotate_all_pdfs(
-    student_json_map: Dict[str, str], grades_map: Dict[str, str], force: bool = False
-):
-    for pdf in student_json_map.keys():
-        out_pdf = OUT_DIR / (Path(pdf).stem + ".annotated.pdf")
-        if out_pdf.exists() and not force:
-            print(f"[5] annotated existe déjà → {out_pdf}")
-            continue
-        pages_data = load_json(Path(student_json_map[pdf]))
-        grades = load_json(Path(grades_map[pdf]))
-        annotate_pdf(Path(pdf), pages_data, grades, out_pdf)
-        print(f"[5] Écrit → {out_pdf}")
 
 
 # ---------- 6) Résumé ----------
