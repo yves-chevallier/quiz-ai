@@ -1041,15 +1041,6 @@ def feedback(
             readable=True,
         ),
     ] = None,
-    name_prompt_path: Annotated[
-        Optional[Path],
-        typer.Option(
-            "--name-prompt",
-            help="Prompt personnalisé pour l'extraction du nom sur la page de garde.",
-            exists=True,
-            readable=True,
-        ),
-    ] = None,
     user_label: Annotated[
         Optional[str],
         typer.Option("--user", help="Étiquette utilisateur transmise à l'API."),
@@ -1061,14 +1052,7 @@ def feedback(
     grades = load_grading_file(grading_json)
     client = build_openai_client()
 
-    resolved_name, vision_data = resolve_student_name(
-        grading_json,
-        grades,
-        client=client,
-        model=model,
-        name_prompt_path=name_prompt_path,
-        user_label=user_label,
-    )
+    resolved_name = resolve_student_name(grading_json, grades)
 
     student_block = grades.get("student")
     if resolved_name:
@@ -1107,10 +1091,6 @@ def feedback(
         typer.echo(f"Feedback généré pour {resolved_name} → {feedback_path}")
     else:
         typer.echo(f"Feedback généré (nom non identifié) → {feedback_path}")
-    if vision_data:
-        notes = vision_data.get("notes")
-        if isinstance(notes, str) and notes.strip():
-            typer.echo(f"Nota extraction nom : {notes.strip()}")
 
 
 def _build_feedback_payload(

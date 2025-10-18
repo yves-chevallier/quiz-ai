@@ -7,20 +7,17 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence
 
 from openai import OpenAI
 
 from .llm import (
     DEFAULT_VISION_MODEL,
     build_openai_client,
-    call_vision,
-    image_file_to_data_url,
 )
 from .utils import read_json, write_text
 
 FEEDBACK_PROMPT_PATH = Path(__file__).resolve().parent / "assets" / "prompts" / "feedback.prompt.md"
-NAME_PROMPT_PATH = Path(__file__).resolve().parent / "assets" / "prompts" / "feedback_name.prompt.md"
 
 
 @dataclass(frozen=True)
@@ -45,16 +42,11 @@ def load_grading_file(path: Path) -> Dict[str, Any]:
 
 
 def resolve_student_name(
-    grade_path: Path,
+    _grade_path: Path,
     grades: Dict[str, Any],
-    *,
-    client: Optional[OpenAI] = None,
-    model: str = DEFAULT_VISION_MODEL,
-    name_prompt_path: Optional[Path] = None,
-    user_label: Optional[str] = None,
-) -> Tuple[str, Dict[str, Any]]:
+) -> str:
     """
-    Return the most reliable student name found in `grades`, falling back to a vision prompt.
+    Return the most reliable student name found in `grades`, based solely on analysis metadata.
     """
     metadata = grades.get("_analysis_metadata")
     if not isinstance(metadata, dict):
@@ -77,51 +69,20 @@ def resolve_student_name(
 
     cleaned_candidates = [_normalise_name(value) for value in candidates if value]
 
-    # Decide whether we should attempt a fresh vision extraction
-    confidence = str(metadata.get("student_name_confidence") or "").strip().lower()
-    title_image_path = _resolve_title_image_path(grade_path, grades, metadata)
-    need_vision = False
-    if not cleaned_candidates:
-        need_vision = True
-    elif confidence in {"", "low"} and title_image_path:
-        need_vision = True
-
-    vision_metadata: Dict[str, Any] = {}
-    if need_vision and title_image_path and title_image_path.exists():
-        name_prompt = name_prompt_path or NAME_PROMPT_PATH
-        client = client or build_openai_client()
-        try:
-            vision_metadata = _extract_name_with_vision(
-                client,
-                image_path=title_image_path,
-                prompt_path=name_prompt,
-                model=model,
-                user_label=user_label,
-            )
-        except Exception:
-            vision_metadata = {}
-
-        vision_name = _normalise_name(str(vision_metadata.get("cleaned_name") or ""))
-        if vision_name:
-            cleaned_candidates.append(vision_name)
-        raw_from_vision = vision_metadata.get("raw_transcription")
-        if isinstance(raw_from_vision, str) and raw_from_vision.strip():
-            cleaned_candidates.append(_normalise_name(raw_from_vision))
-
     final_name = ""
     if cleaned_candidates:
-        # Keep the longest candidate after removing duplicates while preserving order
         seen: set[str] = set()
-        ordered = []
+        ordered: List[str] = []
         for candidate in cleaned_candidates:
-            if candidate and candidate.lower() not in seen:
+            key = candidate.lower()
+            if candidate and key not in seen:
                 ordered.append(candidate)
-                seen.add(candidate.lower())
+                seen.add(key)
         if ordered:
-            ordered.sort(key=lambda item: len(item), reverse=True)
+            ordered.sort(key=len, reverse=True)
             final_name = ordered[0]
 
-    return final_name, vision_metadata
+    return final_name
 
 
 def build_feedback_inputs(data: Dict[str, Any]) -> FeedbackInputs:
@@ -281,50 +242,3 @@ def _normalise_name(raw: str) -> str:
     if not tokens:
         return ""
     return " ".join(token.capitalize() if len(token) > 1 else token.upper() for token in tokens)
-
-
-def _resolve_title_image_path(
-    grade_path: Path,
-    grades: Dict[str, Any],
-    metadata: Dict[str, Any],
-) -> Optional[Path]:
-    image_rel = metadata.get("title_page_image")
-    if not isinstance(image_rel, str) or not image_rel.strip():
-        return None
-
-    source_analysis = grades.get("_source_analysis")
-    base_dir = grade_path.parent
-    if isinstance(source_analysis, str) and source_analysis.strip():
-        analysis_path = Path(source_analysis.strip())
-        if not analysis_path.is_absolute():
-            analysis_path = (grade_path.parent / analysis_path).resolve()
-        base_dir = analysis_path.parent
-
-    candidate = Path(image_rel)
-    if not candidate.is_absolute():
-        candidate = (base_dir / candidate).resolve()
-    return candidate
-
-
-def _extract_name_with_vision(
-    client: OpenAI,
-    *,
-    image_path: Path,
-    prompt_path: Path,
-    model: str,
-    user_label: Optional[str],
-) -> Dict[str, Any]:
-    prompt_text = prompt_path.read_text(encoding="utf-8")
-    data_url = image_file_to_data_url(image_path)
-    response = call_vision(
-        client,
-        prompt=prompt_text,
-        image_data_url=data_url,
-        model=model,
-        user=user_label,
-    )
-    raw_text = getattr(response, "output_text", "") or ""
-    try:
-        return json.loads(raw_text)
-    except json.JSONDecodeError:
-        return {}
