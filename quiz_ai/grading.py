@@ -114,12 +114,12 @@ def run_grading(
             {
                 "role": "user",
                 "content": [
-                    {"type": "input_text", "text": "Analyse JSON de l'étudiant :"},
+                    {"type": "input_text", "text": "Student analysis JSON:"},
                     {
                         "type": "input_text",
                         "text": json.dumps(analysis, ensure_ascii=False),
                     },
-                    {"type": "input_text", "text": "Source YAML officielle du quiz :"},
+                    {"type": "input_text", "text": "Official quiz YAML source:"},
                     {
                         "type": "input_text",
                         "text": solution_text,

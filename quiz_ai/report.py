@@ -56,7 +56,7 @@ def write_summary_csv(
     Generate a CSV summary for the provided grading files and return the summaries.
     """
     summaries = [summarise_grade(path, solution) for path in grade_paths]
-    fieldnames = ["file", "points_obtenus", "points_total", "note"]
+    fieldnames = ["file", "points_obtained", "points_total", "grade"]
 
     with out_csv.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -65,9 +65,9 @@ def write_summary_csv(
             writer.writerow(
                 {
                     "file": summary.data.get("_source_pdf", summary.path.name),
-                    "points_obtenus": f"{summary.points_obtained:.2f}",
+                    "points_obtained": f"{summary.points_obtained:.2f}",
                     "points_total": f"{summary.points_total:.2f}",
-                    "note": "" if summary.note is None else f"{summary.note:.1f}",
+                    "grade": "" if summary.note is None else f"{summary.note:.1f}",
                 }
             )
 
@@ -81,15 +81,15 @@ def build_markdown_report(
     """
     Produce a simple Markdown report aggregating per-student notes.
     """
-    lines = ["# Rapport de notation", ""]
+    lines = ["# Grading Report", ""]
     for summary in summaries:
         data = summary.data
         student = data.get("name") or summary.path.stem
         note_display = "N/A" if summary.note is None else f"{summary.note:.1f}"
         lines.append(f"## {student}")
-        lines.append(f"- Fichier source : `{summary.data.get('_source_pdf', summary.path.name)}`")
-        lines.append(f"- Points obtenus : {summary.points_obtained:.2f} / {summary.points_total:.2f}")
-        lines.append(f"- Note (6) : {note_display}")
+        lines.append(f"- Source file: `{summary.data.get('_source_pdf', summary.path.name)}`")
+        lines.append(f"- Points obtained: {summary.points_obtained:.2f} / {summary.points_total:.2f}")
+        lines.append(f"- Grade (out of 6): {note_display}")
         lines.append("")
 
     write_text(out_markdown, "\n".join(lines).strip() + "\n")

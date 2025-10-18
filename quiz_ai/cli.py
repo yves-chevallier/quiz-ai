@@ -58,7 +58,7 @@ except ImportError:  # pragma: no cover - fallback for older Typer versions
 
 
 app = typer.Typer(
-    help="Outils CLI pour la conversion, l'analyse et la notation de quiz scannés.",
+    help="CLI tools to convert, analyse, and grade scanned quizzes.",
     no_args_is_help=True,
 )
 
@@ -119,13 +119,13 @@ class RichAnalysisProgress:
             refresh_per_second=6,
         )
         self._live.__enter__()
-        self._log("Analyse initialisée. CTRL+C pour interrompre.", style="bold cyan")
+        self._log("Analysis initialised. Press CTRL+C to interrupt.", style="bold cyan")
         self._refresh()
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
         if exc_type is KeyboardInterrupt:
-            self._log("Interruption utilisateur détectée.", style="bold yellow")
+            self._log("User interruption detected.", style="bold yellow")
             self._refresh()
         if self._live:
             self._live.__exit__(exc_type, exc, tb)
@@ -141,8 +141,8 @@ class RichAnalysisProgress:
             self.state["total_expected"] = int(payload.get("total_regions_expected") or 0)
             self.state["pages_with_regions"] = int(payload.get("pages_with_regions") or 0)
             self._log(
-                f"{self.state['total_expected']} zone(s) attendues sur "
-                f"{self.state['pages_with_regions']} page(s) ancrées.",
+                f"{self.state['total_expected']} expected region(s) across "
+                f"{self.state['pages_with_regions']} anchored page(s).",
                 style="cyan",
             )
             return
@@ -151,7 +151,7 @@ class RichAnalysisProgress:
             total_pages = payload.get("total_pages")
             if isinstance(total_pages, int):
                 self.state["total_pages"] = total_pages
-            self._log(f"PDF rasterisé → {total_pages} page(s).", style="cyan")
+            self._log(f"PDF rasterised → {total_pages} page(s).", style="cyan")
             return
 
         if event == "page:start":
@@ -159,42 +159,42 @@ class RichAnalysisProgress:
             self.state["current_page"] = page_number
             self.state["current_page_regions"] = 0
             self.state["current_page_questions"] = 0
-            self._log(f"Page {page_number} : préparation.", style="magenta")
+            self._log(f"Page {page_number}: preparing.", style="magenta")
             return
 
         if event == "page:rendered":
             image_path = payload.get("image_path")
             filename = Path(image_path).name if image_path else "image"
-            self._log(f"Page rendue → {filename}", style="magenta")
+            self._log(f"Page rendered → {filename}", style="magenta")
             return
 
         if event == "page:regions":
             count = int(payload.get("count", 0))
             self.state["current_page_regions"] = count
-            self._log(f"Régions détectées : {count}", style="magenta")
+            self._log(f"Detected regions: {count}", style="magenta")
             return
 
         if event == "page:crops-ready":
             count = int(payload.get("count", 0))
             self.state["current_page_regions"] = count
-            self._log(f"Rognage terminé : {count} zone(s).", style="magenta")
+            self._log(f"Cropping finished: {count} region(s).", style="magenta")
             return
 
         if event == "page:skip":
             reason = payload.get("reason") or "motif inconnu"
             mapping = {
-                "no-anchors": "aucune ancre correspondante",
-                "no-regions": "aucune région définie",
-                "invalid-page-height": "hauteur de page invalide",
+                "no-anchors": "no matching anchors",
+                "no-regions": "no regions defined",
+                "invalid-page-height": "invalid page height",
             }
             detail = mapping.get(reason, reason)
-            self._log(f"Page ignorée ({detail}).", style="yellow")
+            self._log(f"Page skipped ({detail}).", style="yellow")
             return
 
         if event == "page:process":
             count = int(payload.get("question_count", 0))
             self.state["current_page_questions"] = count
-            self._log(f"Traitement des {count} zone(s) détectées.", style="magenta")
+            self._log(f"Processing {count} detected region(s).", style="magenta")
             return
 
         if event == "question:start":
@@ -212,7 +212,7 @@ class RichAnalysisProgress:
             return
 
         if event == "question:request":
-            self._log("  ↳ Requête envoyée au modèle…", style="green")
+            self._log("  ↳ Request sent to the model…", style="green")
             return
 
         if event == "question:result":
@@ -248,17 +248,17 @@ class RichAnalysisProgress:
                 self._pages_seen.add(page_number)
 
             self._log(
-                f"  ↳ Réponse reçue : {kind or 'question'} | {summary}",
+                f"  ↳ Response received: {kind or 'question'} | {summary}",
                 style="green",
             )
             self._log(
-                f"    Jetons {total_tokens} (in {in_tokens}, out {out_tokens})",
+                f"    Tokens {total_tokens} (in {in_tokens}, out {out_tokens})",
                 style="dim",
             )
             return
 
         if event == "run:complete":
-            self._log("Analyse terminée.", style="bold green")
+            self._log("Analysis completed.", style="bold green")
             return
 
         # Unknown events fallback
@@ -290,20 +290,20 @@ class RichAnalysisProgress:
 
         summary_table.add_row(
             "Pages",
-            f"{pages_display} (avec régions {self.state['pages_with_regions']})",
+            f"{pages_display} (with regions {self.state['pages_with_regions']})",
             self._progress_widget(pages_seen, total_pages),
         )
 
         overall_tokens = self.state["overall_tokens"]
         summary_table.add_row(
-            "Jetons",
+            "Tokens",
             f"{overall_tokens['total']} (in {overall_tokens['input']}, out {overall_tokens['output']})",
             self._placeholder(),
         )
 
         summary_panel = Panel(
             summary_table,
-            title="Progression",
+            title="Progress",
             border_style="cyan",
             box=box.ROUNDED,
         )
@@ -321,33 +321,36 @@ class RichAnalysisProgress:
                 page_value = "-"
             else:
                 page_value = (
-                    f"Page {self.state['current_page']} • " f"{self.state['current_page_regions']} zone(s) détectées"
+                    f"Page {self.state['current_page']} • "
+                    f"{self.state['current_page_regions']} detected region(s)"
                 )
                 if self.state["current_page_questions"]:
-                    page_value += f" • {self.state['current_page_questions']} en traitement"
-            details_table.add_row("Page actuelle", page_value)
+                    page_value += f" • {self.state['current_page_questions']} in progress"
+            details_table.add_row("Current page", page_value)
 
             question_id = self.state["current_question_id"]
             if question_id is None:
                 question_value = "-"
             else:
                 total = self.state["current_question_total"] or self.state["questions_total"] or "-"
-                kind = self.state["current_question_kind"] or "type inconnu"
-                question_value = f"Q{question_id} ({kind}) • {self.state['current_question_position']}/{total}"
-            details_table.add_row("Question en cours", question_value)
+                kind = self.state["current_question_kind"] or "unknown type"
+                question_value = (
+                    f"Q{question_id} ({kind}) • {self.state['current_question_position']}/{total}"
+                )
+            details_table.add_row("Active question", question_value)
 
-            summary_text = self.state["current_question_summary"] or "En attente de réponse…"
-            details_table.add_row("Résumé", summary_text)
+            summary_text = self.state["current_question_summary"] or "Waiting for response…"
+            details_table.add_row("Summary", summary_text)
 
             tokens = self.state["current_question_tokens"]
             details_table.add_row(
-                "Jetons (dernier)",
+                "Tokens (latest)",
                 f"{tokens['total']} (in {tokens['input']}, out {tokens['output']})",
             )
 
             details_panel = Panel(
                 details_table,
-                title="Contexte",
+                title="Context",
                 border_style="magenta",
                 box=box.ROUNDED,
             )
@@ -355,11 +358,11 @@ class RichAnalysisProgress:
         if self._messages:
             messages_renderable = Group(*self._messages)
         else:
-            messages_renderable = Text("En attente d'événements…", style="dim")
+            messages_renderable = Text("Waiting for events…", style="dim")
 
         log_panel = Panel(
             messages_renderable,
-            title="Journal",
+            title="Log",
             border_style="green",
             box=box.ROUNDED,
         )
@@ -440,7 +443,7 @@ class RichAnalysisProgress:
                 elif self._last_size != current:
                     self._last_size = current
                     self._log(
-                        f"Dimension terminal ajustée → {current[0]}×{current[1]}",
+                        f"Terminal size changed → {current[0]}×{current[1]}",
                         style="dim",
                     )
             self._live.update(self._render())
@@ -450,53 +453,53 @@ class RichAnalysisProgress:
 def latex(
     quiz_yaml: Annotated[
         Path,
-        typer.Argument(help="Fichier YAML décrivant le quiz.", exists=True, readable=True),
+        typer.Argument(help="Quiz YAML description file.", exists=True, readable=True),
     ],
     output: Annotated[
         Optional[Path],
-        typer.Option("-o", "--output", help="Chemin du fichier LaTeX généré."),
+        typer.Option("-o", "--output", help="Path to the generated LaTeX file."),
     ] = None,
 ) -> None:
     """
-    Convertir un quiz YAML en fichier LaTeX.
+    Convert a quiz YAML file into a LaTeX document.
     """
     tex_path = output or quiz_yaml.with_suffix(".tex")
     write_latex_from_yaml(quiz_yaml, tex_path)
-    typer.echo(f"LaTeX généré → {tex_path}")
+    typer.echo(f"LaTeX generated → {tex_path}")
 
 
 @app.command()
 def anchors(
     pdf: Annotated[
         Path,
-        typer.Argument(help="PDF source contenant les ancres hyperref.", exists=True, readable=True),
+        typer.Argument(help="Source PDF containing hyperref anchors.", exists=True, readable=True),
     ],
     output: Annotated[
         Optional[Path],
-        typer.Option("-o", "--output", help="Fichier JSON de sortie.", dir_okay=False),
+        typer.Option("-o", "--output", help="Output JSON file path.", dir_okay=False),
     ] = None,
     overlap: Annotated[
         float,
         typer.Option(
             "--overlap",
             min=0.0,
-            help="Chevauchement vertical en mm entre deux ancres consécutives.",
+            help="Vertical overlap in millimetres between consecutive anchors.",
         ),
     ] = 3.0,
     pattern: Annotated[
         str,
-        typer.Option("--pattern", help="Expression régulière identifiant les ancres."),
+        typer.Option("--pattern", help="Regular expression selecting anchors."),
     ] = r"^Q(\d+)-anchor$",
     include_bottom: Annotated[
         bool,
         typer.Option(
             "--include-bottom/--no-include-bottom",
-            help="Inclure la zone sous la dernière ancre.",
+            help="Include the segment below the last anchor.",
         ),
     ] = True,
 ) -> None:
     """
-    Extraire les ancres d'un PDF et les sérialiser en JSON.
+    Extract anchors from a PDF and serialise them to JSON.
     """
     anchors_model = extract_anchors(
         pdf,
@@ -506,7 +509,7 @@ def anchors(
     )
     if output:
         save_anchors(anchors_model, output)
-        typer.echo(f"Ancres sauvegardées → {output}")
+        typer.echo(f"Anchors saved → {output}")
     else:
         typer.echo(anchors_model.json_pretty())
 
@@ -516,20 +519,20 @@ def analysis(
     responses_pdf: Annotated[
         Optional[Path],
         typer.Argument(
-            help="PDF des copies scannées à analyser.",
+            help="Scanned responses PDF to analyse.",
             metavar="RESPONSES_PDF",
         ),
     ] = None,
     output: Annotated[
         Path,
-        typer.Option("-o", "--output", help="Dossier de sortie pour l'analyse."),
+        typer.Option("-o", "--output", help="Output directory for the analysis artefacts."),
     ] = Path("analysis"),
     anchors_path: Annotated[
         Optional[Path],
         typer.Option(
             "-a",
             "--anchors",
-            help="Fichier JSON d'ancres pré-calculées.",
+            help="Pre-calculated anchors JSON file.",
             exists=True,
             readable=True,
         ),
@@ -539,24 +542,24 @@ def analysis(
         typer.Option(
             "-i",
             "--input",
-            help="PDF source pour extraire les ancres si besoin.",
+            help="Source PDF used to extract anchors if required.",
             exists=True,
             readable=True,
         ),
     ] = None,
     model: Annotated[
         str,
-        typer.Option("--model", help="Modèle vision OpenAI à utiliser."),
+        typer.Option("--model", help="OpenAI vision model to call."),
     ] = DEFAULT_VISION_MODEL,
     dpi: Annotated[
         int,
-        typer.Option("--dpi", min=60, max=600, help="DPI utilisés pour la rasterisation PDF."),
+        typer.Option("--dpi", min=60, max=600, help="Rendering DPI for PDF rasterisation."),
     ] = 220,
     prompt_path: Annotated[
         Optional[Path],
         typer.Option(
             "--prompt",
-            help="Prompt Markdown personnalisé pour l'analyse.",
+            help="Custom analysis prompt Markdown file.",
             exists=True,
             readable=True,
         ),
@@ -565,7 +568,7 @@ def analysis(
         Optional[Path],
         typer.Option(
             "--title-prompt",
-            help="Prompt Markdown pour l'extraction des métadonnées de la page de garde.",
+            help="Prompt Markdown used to extract cover page metadata.",
             exists=True,
             readable=True,
         ),
@@ -574,22 +577,22 @@ def analysis(
         bool,
         typer.Option(
             "--json-schema",
-            help="Afficher le schéma JSON de sortie et quitter.",
+            help="Print the JSON output schema and exit.",
             is_flag=True,
         ),
     ] = False,
 ) -> None:
     """
-    Lancer l'analyse des copies PDF question par question.
+    Run the visual analysis for a PDF of scanned responses.
     """
     if json_schema:
         typer.echo(json.dumps(analysis_output_schema(), ensure_ascii=False, indent=2))
         raise typer.Exit()
 
     if responses_pdf is None:
-        raise typer.BadParameter("Aucun PDF fourni. Spécifiez RESPONSES_PDF ou utilisez --json-schema.")
+        raise typer.BadParameter("No PDF provided. Pass RESPONSES_PDF or use --json-schema.")
     if not responses_pdf.exists() or not responses_pdf.is_file():
-        raise typer.BadParameter(f"PDF introuvable ou illisible: {responses_pdf}")
+        raise typer.BadParameter(f"PDF not found or unreadable: {responses_pdf}")
 
     out_dir = ensure_directory(output)
     try:
@@ -619,8 +622,8 @@ def analysis(
                 progress=progress_reporter,
             )
     except KeyboardInterrupt as exc:
-        console.print("\n[bold yellow]Analyse interrompue par l'utilisateur. Résultats partiels sauvegardés.[/]")
-        console.print(f"[bold]Fichier JSON[/bold] : {analysis_path}")
+        console.print("\n[bold yellow]Analysis interrupted by the user. Partial results saved.[/]")
+        console.print(f"[bold]JSON file[/bold] : {analysis_path}")
         raise typer.Exit(code=1) from exc
 
     question_range = "N/A"
@@ -629,11 +632,11 @@ def analysis(
         last = result.question_ids[-1]
         question_range = f"{first}..{last}" if first != last else str(first)
 
-    missing_display = "aucune"
+    missing_display = "none"
     if result.missing_question_ids:
         missing_display = ", ".join(str(q) for q in result.missing_question_ids)
 
-    ambiguous_display = "aucune"
+    ambiguous_display = "none"
     if result.ambiguous_question_ids:
         ambiguous_display = ", ".join(str(q) for q in result.ambiguous_question_ids)
 
@@ -641,47 +644,47 @@ def analysis(
     duration_text = _format_duration(result.elapsed_seconds)
 
     summary_table = Table(
-        title="Synthèse",
+        title="Summary",
         box=box.SIMPLE_HEAVY,
         show_edge=True,
         expand=True,
     )
-    summary_table.add_column("Indicateur", style="cyan", no_wrap=True)
-    summary_table.add_column("Valeur", justify="right")
-    summary_table.add_column("Progression", justify="left")
+    summary_table.add_column("Indicator", style="cyan", no_wrap=True)
+    summary_table.add_column("Value", justify="right")
+    summary_table.add_column("Progress", justify="left")
 
     pages_progress_total = max(result.pages_with_regions, result.pages_processed, 1)
     pages_with_regions = result.pages_with_regions or result.pages_processed or result.total_pages or 1
     summary_table.add_row(
-        "Pages analysées",
+        "Pages processed",
         (
-            f"{result.pages_processed}/{pages_with_regions} page(s) avec régions"
-            f" (PDF complet : {result.total_pages})"
+            f"{result.pages_processed}/{pages_with_regions} page(s) with regions"
+            f" (full PDF: {result.total_pages})"
         ),
         RichAnalysisProgress._progress_widget_static(result.pages_processed, pages_progress_total, width=22),
     )
     questions_total = result.total_regions_expected or len(result.expected_question_ids) or result.questions_processed
     summary_table.add_row(
-        "Questions traitées",
-        f"{result.questions_processed} (plage {question_range})",
+        "Questions processed",
+        f"{result.questions_processed} (range {question_range})",
         RichAnalysisProgress._progress_widget_static(
             result.questions_processed,
             questions_total,
             width=22,
         ),
     )
-    summary_table.add_row("Questions manquantes", missing_display, RichAnalysisProgress._placeholder())
-    summary_table.add_row("Ambiguïtés", ambiguous_display, RichAnalysisProgress._placeholder())
+    summary_table.add_row("Missing questions", missing_display, RichAnalysisProgress._placeholder())
+    summary_table.add_row("Ambiguities", ambiguous_display, RichAnalysisProgress._placeholder())
     summary_table.add_row(
-        "Jetons consommés",
-        f"{usage.total_tokens} (entrée {usage.input_tokens} / sortie {usage.output_tokens})",
+        "Tokens consumed",
+        f"{usage.total_tokens} (input {usage.input_tokens} / output {usage.output_tokens})",
         RichAnalysisProgress._placeholder(),
     )
-    summary_table.add_row("Durée totale", duration_text, RichAnalysisProgress._placeholder())
+    summary_table.add_row("Total duration", duration_text, RichAnalysisProgress._placeholder())
 
     console.print()
     console.print(summary_table)
-    console.print(f"[bold green]Fichier JSON[/bold green] : {analysis_path}")
+    console.print(f"[bold green]JSON file[/bold green] : {analysis_path}")
 
 
 @app.command()
@@ -689,7 +692,7 @@ def grading(
     analysis_json: Annotated[
         Path,
         typer.Argument(
-            help="Fichier JSON produit par l'analyse visuelle.",
+            help="JSON file produced by the visual analysis.",
             exists=True,
             readable=True,
         ),
@@ -697,7 +700,7 @@ def grading(
     quiz_yaml: Annotated[
         Path,
         typer.Argument(
-            help="Fichier YAML source du quiz (solutions officielles).",
+            help="Quiz YAML source (official solutions).",
             exists=True,
             readable=True,
         ),
@@ -707,30 +710,30 @@ def grading(
         typer.Option(
             "-o",
             "--output",
-            help="Dossier de sortie pour la notation.",
+            help="Output directory for grading artefacts.",
             file_okay=False,
         ),
     ] = Path("out"),
     model: Annotated[
         str,
-        typer.Option("--model", help="Modèle OpenAI à utiliser pour la notation."),
+        typer.Option("--model", help="OpenAI model to use for grading."),
     ] = DEFAULT_VISION_MODEL,
     prompt_path: Annotated[
         Optional[Path],
         typer.Option(
             "--prompt",
-            help="Prompt Markdown personnalisé pour la notation.",
+            help="Custom grading prompt Markdown file.",
             exists=True,
             readable=True,
         ),
     ] = None,
     user_label: Annotated[
         Optional[str],
-        typer.Option("--user", help="Étiquette utilisateur transmise à l'API."),
+        typer.Option("--user", help="User label forwarded to the API."),
     ] = None,
 ) -> None:
     """
-    Lancer la notation automatique à partir d'un JSON d'analyse et du quiz YAML.
+    Run automatic grading from an analysis JSON and the quiz YAML.
     """
     out_dir = ensure_directory(output)
     grade_path = out_dir / "grading.json"
@@ -852,7 +855,7 @@ def grading(
 
     if not isinstance(grades.get("final_report"), str) or not grades["final_report"].strip():
         grades["final_report"] = (
-            "Rapport non fourni par le modèle. Les résultats chiffrés restent néanmoins disponibles."
+            "No narrative report was provided by the model. Numeric results remain available."
         )
 
     grades["_source_analysis"] = str(analysis_json)
@@ -863,7 +866,7 @@ def grading(
         grades["_analysis_metadata"] = analysis_metadata
 
     write_json(grade_path, grades)
-    typer.echo(f"Notation enregistrée → {grade_path} ({obtained:.2f}/{total:.2f} pts, {percentage:.1f} %)")
+    typer.echo(f"Grading saved → {grade_path} ({obtained:.2f}/{total:.2f} pts, {percentage:.1f} %)")
 
 
 @app.command("grade-one")
@@ -871,7 +874,7 @@ def grade_one(
     analysis_json: Annotated[
         Path,
         typer.Argument(
-            help="Fichier JSON produit par la commande d'analyse.",
+            help="Analysis JSON produced by the analysis command.",
             exists=True,
             readable=True,
         ),
@@ -881,22 +884,22 @@ def grade_one(
         typer.Option(
             "-q",
             "--quiz",
-            help="Fichier YAML des solutions officielles.",
+            help="YAML file with the official solutions.",
             exists=True,
             readable=True,
         ),
     ],
     output: Annotated[
         Path,
-        typer.Option("-o", "--output", help="Fichier JSON de notation.", dir_okay=False),
+        typer.Option("-o", "--output", help="Output grading JSON file.", dir_okay=False),
     ] = Path("grade.json"),
     model: Annotated[
         str,
-        typer.Option("--model", help="Modèle texte OpenAI pour la notation."),
+        typer.Option("--model", help="OpenAI text model to use for grading."),
     ] = DEFAULT_VISION_MODEL,
 ) -> None:
     """
-    Convertir un fichier d'analyse en notation à l'aide du LLM.
+    Convert a single analysis file into grading results using the LLM.
     """
     analysis_data = read_json(analysis_json)
     analysis_metadata = analysis_data.get("metadata") if isinstance(analysis_data, dict) else {}
@@ -935,7 +938,7 @@ def grade_one(
     grades["student"] = student_block
 
     write_json(output, grades)
-    typer.echo(f"Notation enregistrée → {output} ({obtained:.2f}/{total:.2f} pts)")
+    typer.echo(f"Grading saved → {output} ({obtained:.2f}/{total:.2f} pts)")
 
 
 @app.command()
@@ -943,21 +946,21 @@ def report(
     grade_files: Annotated[
         List[Path],
         typer.Argument(
-            help="Un ou plusieurs fichiers JSON de notation.",
+            help="One or more grading JSON files.",
             exists=True,
             readable=True,
         ),
     ],
     output: Annotated[
         Path,
-        typer.Option("-o", "--output", help="Chemin du rapport Markdown."),
+        typer.Option("-o", "--output", help="Path to the generated report (Markdown by default)."),
     ] = Path("report.md"),
     format: Annotated[
         str,
         typer.Option(
             "-f",
             "--format",
-            help="Format du rapport (md ou csv).",
+            help="Report format (md or csv).",
             show_choices=True,
         ),
     ] = "md",
@@ -965,23 +968,23 @@ def report(
         Optional[Path],
         typer.Option(
             "--quiz",
-            help="Fichier YAML des solutions pour recalculer les points.",
+            help="Solution YAML file to recompute scores.",
             exists=True,
             readable=True,
         ),
     ] = None,
 ) -> None:
     """
-    Générer un rapport à partir de plusieurs fichiers de notation.
+    Generate a report from one or more grading files.
     """
     summaries = []
     solution: Optional[Solution] = load_solution(quiz_yaml) if quiz_yaml else None
 
     if format == "csv":
         if solution is None:
-            raise typer.BadParameter("Le format CSV requiert --quiz pour connaître la pondération.")
+            raise typer.BadParameter("CSV output requires --quiz to know the question weighting.")
         summaries = write_summary_csv(grade_files, solution, output)
-        typer.echo(f"CSV de synthèse généré → {output}")
+        typer.echo(f"Summary CSV generated → {output}")
         return
 
     if solution:
@@ -1006,7 +1009,7 @@ def report(
             )
 
     build_markdown_report(summaries, output)
-    typer.echo(f"Rapport Markdown généré → {output}")
+    typer.echo(f"Markdown report generated → {output}")
 
 
 @app.command()
@@ -1014,7 +1017,7 @@ def feedback(
     grading_json: Annotated[
         Path,
         typer.Argument(
-            help="Fichier JSON de notation généré par la commande grade.",
+            help="Grading JSON file produced by the grade command.",
             exists=True,
             readable=True,
         ),
@@ -1024,30 +1027,30 @@ def feedback(
         typer.Option(
             "-o",
             "--output",
-            help="Fichier Markdown pour l'email de feedback.",
+            help="Markdown file where the feedback email will be written.",
             dir_okay=False,
         ),
     ] = None,
     model: Annotated[
         str,
-        typer.Option("--model", help="Modèle OpenAI pour la génération du feedback."),
+        typer.Option("--model", help="OpenAI model to use for feedback generation."),
     ] = DEFAULT_VISION_MODEL,
     prompt_path: Annotated[
         Optional[Path],
         typer.Option(
             "--prompt",
-            help="Prompt personnalisé pour la rédaction de l'email.",
+            help="Custom prompt used to craft the email.",
             exists=True,
             readable=True,
         ),
     ] = None,
     user_label: Annotated[
         Optional[str],
-        typer.Option("--user", help="Étiquette utilisateur transmise à l'API."),
+        typer.Option("--user", help="User label forwarded to the API."),
     ] = None,
 ) -> None:
     """
-    Générer un email de feedback motivant à partir d'un fichier de notation.
+    Generate a motivational feedback email from a grading file.
     """
     grades = load_grading_file(grading_json)
     client = build_openai_client()
@@ -1088,14 +1091,15 @@ def feedback(
     write_feedback_file(feedback_path, email_text)
 
     if resolved_name:
-        typer.echo(f"Feedback généré pour {resolved_name} → {feedback_path}")
+        typer.echo(f"Feedback generated for {resolved_name} → {feedback_path}")
     else:
-        typer.echo(f"Feedback généré (nom non identifié) → {feedback_path}")
+        typer.echo(f"Feedback generated (student name unresolved) → {feedback_path}")
 
 
 def _build_feedback_payload(
     grades: Dict[str, Any],
 ) -> Tuple[List[Dict[str, Any]], Optional[Tuple[float, float]]]:
+    """Transform grading data into annotate-ready feedback payloads."""
     feedback: List[Dict[str, Any]] = []
     for q in grades.get("questions", []):
         q_id = q.get("id")
@@ -1158,32 +1162,32 @@ def _build_feedback_payload(
 def annotate(
     pdf_input: Annotated[
         Path,
-        typer.Argument(help="PDF original des copies scannées.", exists=True, readable=True),
+        typer.Argument(help="Original PDF of the scanned responses.", exists=True, readable=True),
     ],
     grades_json: Annotated[
         Path,
         typer.Option(
             "-g",
             "--grades",
-            help="Fichier JSON de notation contenant remarques et corrections.",
+            help="Grading JSON file containing remarks and corrections.",
             exists=True,
             readable=True,
         ),
     ],
     anchors_json: Annotated[
         Path,
-        typer.Option("-a", "--anchors", help="Fichier JSON d'ancres.", exists=True, readable=True),
+        typer.Option("-a", "--anchors", help="Anchors JSON file.", exists=True, readable=True),
     ],
     pdf_output: Annotated[
         Path,
         typer.Argument(
-            help="PDF annoté à générer.",
+            help="Annotated PDF to generate.",
             dir_okay=False,
         ),
     ] = Path("annotated.pdf"),
 ) -> None:
     """
-    Produire un PDF annoté à partir des corrections du LLM.
+    Produce an annotated PDF from the LLM corrections.
     """
     anchors_model = load_anchors(anchors_json)
     grades = read_json(grades_json)
@@ -1196,35 +1200,35 @@ def annotate(
         feedback=feedback,
         overall_points=overall_points,
     )
-    typer.echo(f"PDF annoté généré → {pdf_output}")
+    typer.echo(f"Annotated PDF generated → {pdf_output}")
 
 
 @app.command()
 def grade(
     responses_pdf: Annotated[
         Path,
-        typer.Argument(help="PDF des copies scannées.", exists=True, readable=True),
+        typer.Argument(help="PDF of the scanned responses.", exists=True, readable=True),
     ],
     quiz_yaml: Annotated[
         Path,
         typer.Option(
             "-q",
             "--quiz",
-            help="Fichier YAML de la solution.",
+            help="YAML solution file.",
             exists=True,
             readable=True,
         ),
     ],
     output: Annotated[
         Path,
-        typer.Option("-o", "--output", help="Dossier de sortie global."),
+        typer.Option("-o", "--output", help="Global output directory."),
     ] = Path("grade"),
     anchors_path: Annotated[
         Optional[Path],
         typer.Option(
             "-a",
             "--anchors",
-            help="Fichier d'ancres existant.",
+            help="Existing anchors JSON file.",
             exists=True,
             readable=True,
         ),
@@ -1234,39 +1238,39 @@ def grade(
         typer.Option(
             "-i",
             "--input",
-            help="PDF source pour extraire les ancres.",
+            help="Source PDF used to extract anchors.",
             exists=True,
             readable=True,
         ),
     ] = None,
     model: Annotated[
         str,
-        typer.Option("--model", help="Modèle OpenAI (vision + texte)."),
+        typer.Option("--model", help="OpenAI multimodal model (vision + text)."),
     ] = DEFAULT_VISION_MODEL,
     report_path: Annotated[
         Optional[Path],
-        typer.Option("--report", help="Générer un rapport Markdown à ce chemin."),
+        typer.Option("--report", help="Write a Markdown report at this path."),
     ] = None,
     annotate_pdf_flag: Annotated[
         bool,
-        typer.Option("--annotate/--no-annotate", help="Produire également un PDF annoté."),
+        typer.Option("--annotate/--no-annotate", help="Also produce an annotated PDF."),
     ] = False,
     prompt_path: Annotated[
         Optional[Path],
         typer.Option(
             "--prompt",
-            help="Prompt Markdown personnalisé pour l'analyse.",
+            help="Custom analysis prompt Markdown file.",
             exists=True,
             readable=True,
         ),
     ] = None,
     dpi: Annotated[
         int,
-        typer.Option("--dpi", min=60, max=600, help="DPI utilisés pour la rasterisation PDF."),
+        typer.Option("--dpi", min=60, max=600, help="Rendering DPI for PDF rasterisation."),
     ] = 220,
 ) -> None:
     """
-    Chaîne complète analyse + notation (+ rapport/annotation optionnels).
+    Full pipeline: analysis + grading (with optional report/annotation).
     """
     base_dir = ensure_directory(output)
     analysis_dir = ensure_directory(base_dir / "analysis")
@@ -1307,13 +1311,13 @@ def grade(
 
     grades_path = base_dir / "grade.json"
     write_json(grades_path, grades)
-    typer.echo(f"Notation terminée → {grades_path} ({obtained:.2f}/{total:.2f} pts)")
+    typer.echo(f"Grading completed → {grades_path} ({obtained:.2f}/{total:.2f} pts)")
 
     summaries = None
     if report_path:
         summaries = [summarise_grade(grades_path, solution)]
         build_markdown_report(summaries, report_path)
-        typer.echo(f"Rapport généré → {report_path}")
+        typer.echo(f"Report generated → {report_path}")
 
     if annotate_pdf_flag:
         annotated_path = base_dir / "annotated.pdf"
@@ -1325,4 +1329,4 @@ def grade(
             feedback=feedback,
             overall_points=overall_points,
         )
-        typer.echo(f"PDF annoté généré → {annotated_path}")
+        typer.echo(f"Annotated PDF generated → {annotated_path}")

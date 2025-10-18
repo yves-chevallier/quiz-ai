@@ -146,9 +146,9 @@ def generate_feedback_email(
     context = {
         "student_name": payload.student_name,
         "score": {
-            "points_obtenus": round(payload.score_points, 2),
+            "points_obtained": round(payload.score_points, 2),
             "points_total": round(payload.score_total, 2),
-            "pourcentage": round(payload.score_percentage, 2),
+            "percentage": round(payload.score_percentage, 2),
         },
         "quiz_title": payload.quiz_title,
         "final_report": payload.final_report,
@@ -185,7 +185,7 @@ def generate_feedback_email(
     text = getattr(response, "output_text", None) or ""
     email = text.strip()
     if not email:
-        raise RuntimeError("Le modèle n'a pas produit de texte de feedback.")
+        raise RuntimeError("The model did not produce any feedback text.")
 
     signature = "L'assistant artificiel de votre professeur"
     if signature not in email:

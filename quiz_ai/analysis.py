@@ -190,7 +190,7 @@ def _extract_summary_text(parsed: Optional[object], raw_text: str, max_len: int 
 
     text = " ".join(text.split())
     if not text:
-        return "Aucun résumé disponible."
+        return "No summary available."
     if len(text) > max_len:
         text = text[: max_len - 1].rstrip() + "…"
     return text
