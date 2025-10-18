@@ -248,32 +248,43 @@ class RichAnalysisProgress:
 
     # Rendering ---------------------------------------------------------------------
     def _render(self):
+        size = self.console.size
+        term_width = size.width if size else 120
+
+        total_expected = self.state["total_expected"] or self.state["questions_total"] or 0
+        processed = self.state["questions_processed"]
+        expected_display = (
+            f"{processed}/{total_expected}" if total_expected else f"{processed}/-"
+        )
+
+        total_pages = self.state["total_pages"] or 0
+        pages_seen = len(self._pages_seen)
+        pages_display = (
+            f"{pages_seen}/{total_pages}" if total_pages else f"{pages_seen}/-"
+        )
+
         summary_table = Table.grid(padding=(0, 1))
         summary_table.add_column(style="cyan", justify="right")
         summary_table.add_column()
         summary_table.add_column(justify="left")
 
-        processed = self.state["questions_processed"]
-        expected = self.state["total_expected"] or self.state["questions_total"] or "-"
         summary_table.add_row(
             "Questions",
-            f"{processed}/{expected}",
-            self._progress_bar(completed=processed, total=expected),
+            f"{expected_display}",
+            self._progress_widget(processed, total_expected),
         )
 
-        total_pages = self.state["total_pages"] or "-"
-        pages_seen = len(self._pages_seen)
         summary_table.add_row(
             "Pages",
-            f"{pages_seen}/{total_pages} (avec régions {self.state['pages_with_regions']})",
-            self._progress_bar(completed=pages_seen, total=total_pages),
+            f"{pages_display} (avec régions {self.state['pages_with_regions']})",
+            self._progress_widget(pages_seen, total_pages),
         )
 
         overall_tokens = self.state["overall_tokens"]
         summary_table.add_row(
             "Jetons",
             f"{overall_tokens['total']} (in {overall_tokens['input']}, out {overall_tokens['output']})",
-            Text("—", style="dim"),
+            self._placeholder(),
         )
 
         summary_panel = Panel(
@@ -283,45 +294,50 @@ class RichAnalysisProgress:
             box=box.ROUNDED,
         )
 
-        details_table = Table.grid(padding=(0, 1))
-        details_table.add_column(style="magenta", justify="right")
-        details_table.add_column()
+        show_details = term_width >= 72
+        show_log = term_width >= 110
 
-        if self.state["current_page"] is None:
-            page_value = "-"
-        else:
-            page_value = (
-                f"Page {self.state['current_page']} • "
-                f"{self.state['current_page_regions']} zone(s) détectées"
+        details_panel = None
+        if show_details:
+            details_table = Table.grid(padding=(0, 1))
+            details_table.add_column(style="magenta", justify="right")
+            details_table.add_column()
+
+            if self.state["current_page"] is None:
+                page_value = "-"
+            else:
+                page_value = (
+                    f"Page {self.state['current_page']} • "
+                    f"{self.state['current_page_regions']} zone(s) détectées"
+                )
+                if self.state["current_page_questions"]:
+                    page_value += f" • {self.state['current_page_questions']} en traitement"
+            details_table.add_row("Page actuelle", page_value)
+
+            question_id = self.state["current_question_id"]
+            if question_id is None:
+                question_value = "-"
+            else:
+                total = self.state["current_question_total"] or self.state["questions_total"] or "-"
+                kind = self.state["current_question_kind"] or "type inconnu"
+                question_value = f"Q{question_id} ({kind}) • {self.state['current_question_position']}/{total}"
+            details_table.add_row("Question en cours", question_value)
+
+            summary_text = self.state["current_question_summary"] or "En attente de réponse…"
+            details_table.add_row("Résumé", summary_text)
+
+            tokens = self.state["current_question_tokens"]
+            details_table.add_row(
+                "Jetons (dernier)",
+                f"{tokens['total']} (in {tokens['input']}, out {tokens['output']})",
             )
-            if self.state["current_page_questions"]:
-                page_value += f" • {self.state['current_page_questions']} en traitement"
-        details_table.add_row("Page actuelle", page_value)
 
-        question_id = self.state["current_question_id"]
-        if question_id is None:
-            question_value = "-"
-        else:
-            total = self.state["current_question_total"] or self.state["questions_total"] or "-"
-            kind = self.state["current_question_kind"] or "type inconnu"
-            question_value = f"Q{question_id} ({kind}) • {self.state['current_question_position']}/{total}"
-        details_table.add_row("Question en cours", question_value)
-
-        summary_text = self.state["current_question_summary"] or "En attente de réponse…"
-        details_table.add_row("Résumé", summary_text)
-
-        tokens = self.state["current_question_tokens"]
-        details_table.add_row(
-            "Jetons (dernier)",
-            f"{tokens['total']} (in {tokens['input']}, out {tokens['output']})",
-        )
-
-        details_panel = Panel(
-            details_table,
-            title="Contexte",
-            border_style="magenta",
-            box=box.ROUNDED,
-        )
+            details_panel = Panel(
+                details_table,
+                title="Contexte",
+                border_style="magenta",
+                box=box.ROUNDED,
+            )
 
         if self._messages:
             messages_renderable = Group(*self._messages)
@@ -335,19 +351,58 @@ class RichAnalysisProgress:
             box=box.ROUNDED,
         )
 
+        if not show_details and not show_log:
+            return summary_panel
+
+        if not show_log:
+            if details_panel is None:
+                return summary_panel
+            return Group(summary_panel, details_panel)
+
+        left_content = Group(summary_panel, details_panel) if details_panel else summary_panel
+
         layout = Table.grid(expand=True)
         layout.add_column(ratio=2)
         layout.add_column(ratio=1)
-        layout.add_row(Group(summary_panel, details_panel), log_panel)
+        layout.add_row(left_content, log_panel)
         return layout
 
     # Helpers -----------------------------------------------------------------------
+    def __init__(
+        self,
+        *,
+        console: Optional[Console] = None,
+        history_size: int = 6,
+    ) -> None:
+        self.console = console or Console()
+        self.state: Dict[str, Any] = {
+            "total_expected": 0,
+            "pages_with_regions": 0,
+            "total_pages": None,
+            "questions_processed": 0,
+            "questions_total": 0,
+            "current_page": None,
+            "current_page_regions": 0,
+            "current_page_questions": 0,
+            "current_question_id": None,
+            "current_question_kind": "",
+            "current_question_summary": "",
+            "current_question_position": 0,
+            "current_question_total": 0,
+            "current_question_tokens": {"input": 0, "output": 0, "total": 0},
+            "overall_tokens": {"input": 0, "output": 0, "total": 0},
+        }
+        self._messages: Deque[Text] = deque(maxlen=history_size)
+        self._live: Optional[Live] = None
+        self._pages_seen: set[int] = set()
+        self._last_size: Optional[tuple[int, int]] = None
+
     @staticmethod
     def _placeholder() -> Text:
         return Text("—", style="dim")
 
     @staticmethod
-    def _progress_bar(completed: Any, total: Any, *, width: int = 24):
+    def _progress_widget_static(completed: Any, total: Any, *, width: int = 24):
         try:
             total_val = int(total)
             completed_val = int(completed)
@@ -359,14 +414,49 @@ class RichAnalysisProgress:
 
         total_val = max(total_val, 1)
         completed_val = max(0, min(completed_val, total_val))
-        return ProgressBar(total=total_val, completed=completed_val, width=width)
+        bar = ProgressBar(total=total_val, completed=completed_val, width=width)
+        percent = (completed_val / total_val) * 100
+        grid = Table.grid(padding=(0, 1))
+        grid.add_column()
+        grid.add_column(style="cyan", justify="right", width=6, no_wrap=True)
+        grid.add_row(bar, Text(f"{percent:5.1f}%", style="cyan"))
+        return grid
+
+    def _progress_width(self) -> int:
+        size = self.console.size
+        width = size.width if size else 120
+        if width >= 150:
+            return 32
+        if width >= 120:
+            return 26
+        if width >= 100:
+            return 22
+        if width >= 80:
+            return 18
+        return 12
+
+    def _progress_widget(self, completed: Any, total: Any):
+        width = self._progress_width()
+        return RichAnalysisProgress._progress_widget_static(completed, total, width=width)
 
     def _log(self, message: str, *, style: str = "") -> None:
         text = Text(f"• {message}", style=style)
+        if self._messages:
+            last = self._messages[-1]
+            if last and last.plain == text.plain:
+                return
         self._messages.append(text)
 
     def _refresh(self) -> None:
         if self._live:
+            size = self.console.size
+            if size:
+                current = (size.width, size.height)
+                if self._last_size is None:
+                    self._last_size = current
+                elif self._last_size != current:
+                    self._last_size = current
+                    self._log(f"Dimension terminal ajustée → {current[0]}×{current[1]}", style="dim")
             self._live.update(self._render())
 
 
@@ -544,17 +634,28 @@ def analysis(
     )
     summary_table.add_column("Indicateur", style="cyan", no_wrap=True)
     summary_table.add_column("Valeur", justify="right")
+    summary_table.add_column("Progression", justify="left")
 
+    pages_progress_total = result.total_pages or 0
     summary_table.add_row(
         "Pages analysées",
         f"{result.pages_processed}/{result.total_pages} (dont {result.pages_with_regions} avec régions)",
-        RichAnalysisProgress._progress_bar(result.pages_processed, result.total_pages),
+        RichAnalysisProgress._progress_widget_static(
+            result.pages_processed, pages_progress_total, width=22
+        ),
+    )
+    questions_total = (
+        result.total_regions_expected
+        or len(result.expected_question_ids)
+        or result.questions_processed
     )
     summary_table.add_row(
         "Questions traitées",
         f"{result.questions_processed} (plage {question_range})",
-        RichAnalysisProgress._progress_bar(
-            result.questions_processed, result.total_regions_expected or result.questions_processed
+        RichAnalysisProgress._progress_widget_static(
+            result.questions_processed,
+            questions_total,
+            width=22,
         ),
     )
     summary_table.add_row("Questions manquantes", missing_display, RichAnalysisProgress._placeholder())
