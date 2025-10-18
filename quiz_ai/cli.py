@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 from collections import deque
 from pathlib import Path
-from typing import Annotated, Any, Deque, Dict, List, Optional
+from typing import Annotated, Any, Deque, Dict, List, Optional, Tuple
 
 import typer
 
@@ -1002,45 +1002,102 @@ def report(
     typer.echo(f"Rapport Markdown généré → {output}")
 
 
+def _build_feedback_payload(grades: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], Optional[Tuple[float, float]]]:
+    feedback: List[Dict[str, Any]] = []
+    for q in grades.get("questions", []):
+        q_id = q.get("id")
+        if q_id is None:
+            continue
+        status = str(q.get("status") or "").lower()
+        ratio_value: Optional[float] = None
+        raw_ratio = q.get("awarded_ratio")
+        try:
+            if raw_ratio is not None:
+                ratio_value = float(raw_ratio)
+        except (TypeError, ValueError):
+            ratio_value = None
+        if ratio_value is None:
+            try:
+                ap = q.get("awarded_points")
+                mp = q.get("max_points")
+                if ap is not None and mp not in (None, 0):
+                    ratio_value = float(ap) / float(mp)  # type: ignore[arg-type]
+            except (TypeError, ValueError, ZeroDivisionError):
+                ratio_value = None
+
+        if not status:
+            if ratio_value is not None and ratio_value >= 0.999:
+                status = "correct"
+            elif ratio_value is not None and ratio_value <= 0.001:
+                status = "incorrect"
+            elif ratio_value is not None:
+                status = "partial"
+            else:
+                status = "unknown"
+
+        feedback.append(
+            {
+                "id": q_id,
+                "status": status,
+                "awarded_points": q.get("awarded_points"),
+                "max_points": q.get("max_points"),
+                "awarded_ratio": q.get("awarded_ratio"),
+                "remarks": q.get("remarks"),
+                "justification": q.get("justification"),
+                "comment": q.get("comment"),
+                "flags": q.get("flags"),
+            }
+        )
+
+    score_block = grades.get("score") or {}
+    try:
+        obtained = float(score_block.get("points_obtained"))
+        total = float(score_block.get("points_total"))
+    except (TypeError, ValueError):
+        overall_points = None
+    else:
+        overall_points = (obtained, total) if total else None
+
+    return feedback, overall_points
+
+
 @app.command()
 def annotate(
     pdf_input: Annotated[
         Path,
         typer.Argument(help="PDF original des copies scannées.", exists=True, readable=True),
     ],
-    grade_json: Annotated[
+    grades_json: Annotated[
         Path,
-        typer.Argument(help="Fichier JSON de notation contenant remarques et corrections.", exists=True, readable=True),
+        typer.Option("-g", "--grades", help="Fichier JSON de notation contenant remarques et corrections.", exists=True, readable=True),
     ],
     anchors_json: Annotated[
         Path,
         typer.Option("-a", "--anchors", help="Fichier JSON d'ancres.", exists=True, readable=True),
     ],
-    output: Annotated[
+    pdf_output: Annotated[
         Path,
-        typer.Option("-o", "--output", help="PDF annoté à générer.", dir_okay=False),
+        typer.Argument(
+            help="PDF annoté à générer.",
+            dir_okay=False,
+        ),
     ] = Path("annotated.pdf"),
 ) -> None:
     """
     Produire un PDF annoté à partir des corrections du LLM.
     """
     anchors_model = load_anchors(anchors_json)
-    grades = read_json(grade_json)
-    feedback = [
-        {
-            "id": int(q.get("id")),
-            "correct": bool(q.get("correct", False)),
-            "comment": q.get("remark", ""),
-        }
-        for q in grades.get("questions", [])
-    ]
+    grades = read_json(grades_json)
+    feedback, overall_points = _build_feedback_payload(grades)
+
     annotate_pdf(
         pdf_input=pdf_input,
-        pdf_output=output,
+        pdf_output=pdf_output,
         anchors=anchors_model,
         feedback=feedback,
+        overall_points=overall_points,
     )
-    typer.echo(f"PDF annoté généré → {output}")
+    typer.echo(f"PDF annoté généré → {pdf_output}")
 
 
 @app.command()
@@ -1138,18 +1195,12 @@ def grade(
 
     if annotate_pdf_flag:
         annotated_path = base_dir / "annotated.pdf"
-        feedback = [
-            {
-                "id": int(q.get("id")),
-                "correct": bool(q.get("correct", False)),
-                "comment": q.get("remark", ""),
-            }
-            for q in grades.get("questions", [])
-        ]
+        feedback, overall_points = _build_feedback_payload(grades)
         annotate_pdf(
             pdf_input=responses_pdf,
             pdf_output=annotated_path,
             anchors=anchors_model,
             feedback=feedback,
+            overall_points=overall_points,
         )
         typer.echo(f"PDF annoté généré → {annotated_path}")
