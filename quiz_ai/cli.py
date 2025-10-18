@@ -18,7 +18,13 @@ from .analysis import (
     run_analysis,
 )
 from .anchors import extract_anchors, save_anchors
-from .grading import Solution, compute_points_from_grades, load_solution, run_grading
+from .grading import (
+    Solution,
+    compute_points_from_grades,
+    load_solution,
+    run_grading,
+    solution_points_map,
+)
 from .latex import write_latex_from_yaml
 from .llm import DEFAULT_VISION_MODEL, build_openai_client
 from .report import GradeSummary, build_markdown_report, summarise_grade, write_summary_csv
@@ -555,6 +561,15 @@ def analysis(
         Optional[Path],
         typer.Option("--prompt", help="Prompt Markdown personnalisé pour l'analyse.", exists=True, readable=True),
     ] = None,
+    title_prompt_path: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--title-prompt",
+            help="Prompt Markdown pour l'extraction des métadonnées de la page de garde.",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
     json_schema: Annotated[
         bool,
         typer.Option(
@@ -600,6 +615,7 @@ def analysis(
                 model=model,
                 dpi=dpi,
                 prompt_path=prompt_path or PROMPT_PATH,
+                title_prompt_path=title_prompt_path,
                 progress=progress_reporter,
             )
     except KeyboardInterrupt as exc:
@@ -636,10 +652,16 @@ def analysis(
     summary_table.add_column("Valeur", justify="right")
     summary_table.add_column("Progression", justify="left")
 
-    pages_progress_total = result.total_pages or 0
+    pages_progress_total = max(result.pages_with_regions, result.pages_processed, 1)
+    pages_with_regions = (
+        result.pages_with_regions or result.pages_processed or result.total_pages or 1
+    )
     summary_table.add_row(
         "Pages analysées",
-        f"{result.pages_processed}/{result.total_pages} (dont {result.pages_with_regions} avec régions)",
+        (
+            f"{result.pages_processed}/{pages_with_regions} page(s) avec régions"
+            f" (PDF complet : {result.total_pages})"
+        ),
         RichAnalysisProgress._progress_widget_static(
             result.pages_processed, pages_progress_total, width=22
         ),
@@ -672,6 +694,190 @@ def analysis(
     console.print(f"[bold green]Fichier JSON[/bold green] : {analysis_path}")
 
 
+@app.command()
+def grading(
+    analysis_json: Annotated[
+        Path,
+        typer.Argument(
+            help="Fichier JSON produit par l'analyse visuelle.",
+            exists=True,
+            readable=True,
+        ),
+    ],
+    quiz_yaml: Annotated[
+        Path,
+        typer.Argument(
+            help="Fichier YAML source du quiz (solutions officielles).",
+            exists=True,
+            readable=True,
+        ),
+    ],
+    output: Annotated[
+        Path,
+        typer.Option(
+            "-o",
+            "--output",
+            help="Dossier de sortie pour la notation.",
+            file_okay=False,
+        ),
+    ] = Path("out"),
+    model: Annotated[
+        str,
+        typer.Option("--model", help="Modèle OpenAI à utiliser pour la notation."),
+    ] = DEFAULT_VISION_MODEL,
+    prompt_path: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--prompt",
+            help="Prompt Markdown personnalisé pour la notation.",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+    user_label: Annotated[
+        Optional[str],
+        typer.Option("--user", help="Étiquette utilisateur transmise à l'API."),
+    ] = None,
+) -> None:
+    """
+    Lancer la notation automatique à partir d'un JSON d'analyse et du quiz YAML.
+    """
+    out_dir = ensure_directory(output)
+    grade_path = out_dir / "grading.json"
+
+    analysis_data = read_json(analysis_json)
+    analysis_metadata = analysis_data.get("metadata") if isinstance(analysis_data, dict) else {}
+    solution = load_solution(quiz_yaml)
+    client = build_openai_client()
+    solution_questions = solution.questions
+    labels_map = {qid: entry.get("label", "") for qid, entry in solution_questions.items()}
+
+    grades = run_grading(
+        analysis=analysis_data,
+        solution=solution,
+        client=client,
+        model=model,
+        user_label=user_label,
+        prompt_path=prompt_path,
+    )
+
+    points_mapping = solution_points_map(solution)
+    total_questions = len(points_mapping) or len(solution_questions)
+    questions = grades.get("questions")
+    if isinstance(questions, list):
+        normalised_questions = []
+        for entry in questions:
+            if not isinstance(entry, dict):
+                continue
+            try:
+                qid = int(entry.get("id"))
+            except (TypeError, ValueError):
+                continue
+            max_points = float(points_mapping.get(qid, 0.0))
+            ratio_value = entry.get("awarded_ratio")
+            if ratio_value is None:
+                ratio_value = entry.get("granted_ratio", 0.0)
+            try:
+                ratio = float(ratio_value)
+            except (TypeError, ValueError):
+                ratio = 0.0
+            ratio = max(0.0, min(1.0, ratio))
+            entry["id"] = qid
+            entry["max_points"] = max_points
+            entry["awarded_ratio"] = ratio
+            entry["awarded_points"] = round(max_points * ratio, 4)
+            label = entry.get("label")
+            if not isinstance(label, str) or not label.strip():
+                entry["label"] = labels_map.get(qid) or f"Question {qid}"
+            status = entry.get("status")
+            if not isinstance(status, str):
+                if ratio == 0.0:
+                    entry["status"] = "incorrect"
+                elif ratio == 1.0:
+                    entry["status"] = "correct"
+                else:
+                    entry["status"] = "partial"
+            flags = entry.get("flags")
+            if not isinstance(flags, list):
+                flags = []
+            cleaned_flags: List[str] = []
+            for flag in flags:
+                if isinstance(flag, str):
+                    text = flag.strip()
+                    if text:
+                        cleaned_flags.append(text)
+                elif isinstance(flag, (int, float)):
+                    cleaned_flags.append(str(flag))
+            entry["flags"] = cleaned_flags
+            normalised_questions.append(entry)
+        grades["questions"] = sorted(normalised_questions, key=lambda item: item["id"])
+        total_questions = len(normalised_questions)
+    else:
+        grades["questions"] = []
+
+    obtained, total = compute_points_from_grades(grades, solution)
+    percentage = (obtained / total * 100.0) if total else 0.0
+
+    score_block = grades.get("score")
+    if not isinstance(score_block, dict):
+        score_block = {}
+    score_block["points_obtained"] = round(obtained, 4)
+    score_block["points_total"] = round(total, 4)
+    score_block["percentage"] = round(percentage, 2)
+    score_block["total_questions"] = total_questions
+    grades["score"] = score_block
+
+    # Ensure high-level metadata is present
+    student_block = grades.get("student")
+    if not isinstance(student_block, dict):
+        student_block = {}
+    metadata_name = ""
+    metadata_date = ""
+    if isinstance(analysis_metadata, dict):
+        metadata_name = str(analysis_metadata.get("student_name") or "").strip()
+        metadata_date = str(analysis_metadata.get("grading_date") or "").strip()
+    student_block.setdefault("identifier", "")
+    student_block.setdefault("name", metadata_name or "")
+    student_block.setdefault("date", metadata_date or "")
+    if metadata_name and not student_block.get("name"):
+        student_block["name"] = metadata_name
+    if metadata_date and not student_block.get("date"):
+        student_block["date"] = metadata_date
+    grades["student"] = student_block
+
+    quiz_block = grades.get("quiz")
+    if not isinstance(quiz_block, dict):
+        quiz_block = {}
+    raw_meta = solution.raw.get("meta") if isinstance(solution.raw, dict) else {}
+    if not isinstance(raw_meta, dict):
+        raw_meta = {}
+    title = quiz_block.get("title") or raw_meta.get("title") or ""
+    source_reference = quiz_block.get("source_reference") or raw_meta.get("code") or (
+        solution.path.stem if solution.path else ""
+    )
+    quiz_block["title"] = title
+    quiz_block["source_reference"] = source_reference
+    quiz_block["total_questions"] = total_questions
+    grades["quiz"] = quiz_block
+
+    if not isinstance(grades.get("final_report"), str) or not grades["final_report"].strip():
+        grades["final_report"] = (
+            "Rapport non fourni par le modèle. Les résultats chiffrés restent néanmoins disponibles."
+        )
+
+    grades["_source_analysis"] = str(analysis_json)
+    grades["_source_quiz"] = str(quiz_yaml)
+    grades["_points_obtained"] = round(obtained, 4)
+    grades["_points_total"] = round(total, 4)
+    if isinstance(analysis_metadata, dict):
+        grades["_analysis_metadata"] = analysis_metadata
+
+    write_json(grade_path, grades)
+    typer.echo(
+        f"Notation enregistrée → {grade_path} ({obtained:.2f}/{total:.2f} pts, {percentage:.1f} %)"
+    )
+
+
 @app.command("grade-one")
 def grade_one(
     analysis_json: Annotated[
@@ -695,6 +901,7 @@ def grade_one(
     Convertir un fichier d'analyse en notation à l'aide du LLM.
     """
     analysis_data = read_json(analysis_json)
+    analysis_metadata = analysis_data.get("metadata") if isinstance(analysis_data, dict) else {}
     solution = load_solution(quiz_yaml)
     client = build_openai_client()
     grades = run_grading(
@@ -709,6 +916,25 @@ def grade_one(
     grades["_source_quiz"] = str(quiz_yaml)
     grades["_points_obtained"] = obtained
     grades["_points_total"] = total
+    if isinstance(analysis_metadata, dict):
+        grades["_analysis_metadata"] = analysis_metadata
+
+    student_block = grades.get("student")
+    if not isinstance(student_block, dict):
+        student_block = {}
+    metadata_name = ""
+    metadata_date = ""
+    if isinstance(analysis_metadata, dict):
+        metadata_name = str(analysis_metadata.get("student_name") or "").strip()
+        metadata_date = str(analysis_metadata.get("grading_date") or "").strip()
+    student_block.setdefault("identifier", "")
+    student_block.setdefault("name", metadata_name or "")
+    student_block.setdefault("date", metadata_date or "")
+    if metadata_name and not student_block.get("name"):
+        student_block["name"] = metadata_name
+    if metadata_date and not student_block.get("date"):
+        student_block["date"] = metadata_date
+    grades["student"] = student_block
 
     write_json(output, grades)
     typer.echo(f"Notation enregistrée → {output} ({obtained:.2f}/{total:.2f} pts)")

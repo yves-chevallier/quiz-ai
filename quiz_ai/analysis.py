@@ -20,6 +20,7 @@ from .utils import ensure_directory, write_json
 
 
 PROMPT_PATH = Path(__file__).resolve().parent / "assets" / "prompts" / "analysis.prompt.md"
+TITLE_PROMPT_PATH = Path(__file__).resolve().parent / "assets" / "prompts" / "title_page.prompt.md"
 
 ProgressCallback = Callable[[str, Dict[str, Any]], None]
 
@@ -235,6 +236,35 @@ def _relative_image_path(image_path: Path, base_dir: Path) -> str:
         return str(image_path)
 
 
+def _extract_title_metadata(
+    client: OpenAI,
+    *,
+    image_path: Path,
+    prompt_path: Path,
+    model: str,
+    user_label: Optional[str],
+) -> Tuple[Dict[str, Any], Dict[str, int], str]:
+    """
+    Run a dedicated vision prompt on the title page to extract student metadata.
+    """
+    prompt_text = prompt_path.read_text(encoding="utf-8")
+    data_url = image_file_to_data_url(image_path)
+    response = call_vision(
+        client,
+        prompt=prompt_text,
+        image_data_url=data_url,
+        model=model,
+        user=user_label,
+    )
+    raw_text = getattr(response, "output_text", "") or ""
+    parsed = _parse_response_json(raw_text)
+    metadata: Dict[str, Any] = {}
+    if isinstance(parsed, dict):
+        metadata = parsed
+    usage = _extract_usage(response)
+    return metadata, usage, raw_text
+
+
 def run_analysis(
     *,
     responses_pdf: Path,
@@ -242,6 +272,7 @@ def run_analysis(
     output_dir: Path,
     client: Optional[OpenAI] = None,
     prompt_path: Path = PROMPT_PATH,
+    title_prompt_path: Optional[Path] = None,
     model: str = DEFAULT_VISION_MODEL,
     dpi: int = 220,
     user_label: Optional[str] = None,
@@ -254,6 +285,7 @@ def run_analysis(
         raise FileNotFoundError(f"Responses PDF does not exist: {responses_pdf}")
 
     prompt_text = prompt_path.read_text(encoding="utf-8")
+    effective_title_prompt = title_prompt_path or TITLE_PROMPT_PATH
     client = client or build_openai_client()
     images_dir = ensure_directory(output_dir / "images")
 
@@ -274,6 +306,7 @@ def run_analysis(
         "source_pdf": str(responses_pdf),
         "model": model,
         "prompt_path": str(prompt_path),
+        "title_prompt_path": str(effective_title_prompt) if effective_title_prompt else None,
         "dpi": dpi,
         "user_label": user_label,
         "started_at": started_at,
@@ -295,6 +328,15 @@ def run_analysis(
             "output_tokens": 0,
             "total_tokens": 0,
         },
+        "metadata": {
+            "student_name": "",
+            "student_name_confidence": "",
+            "student_name_raw": "",
+            "notes": "",
+            "grading_date": started_at.split("T")[0],
+            "title_page_image": None,
+            "raw_response": "",
+        },
         "items": [],
     }
     analysis_path = output_dir / "analysis.json"
@@ -312,6 +354,42 @@ def run_analysis(
     page_images = cutter.render_pdf_to_images(responses_pdf, images_dir)
     total_pages = len(page_images)
     aggregated["stats"]["total_pages"] = total_pages
+    title_metadata_notes: List[str] = []
+    if page_images and effective_title_prompt and effective_title_prompt.exists():
+        try:
+            title_metadata, title_usage, raw_title_text = _extract_title_metadata(
+                client,
+                image_path=page_images[0].path,
+                prompt_path=effective_title_prompt,
+                model=model,
+                user_label=user_label,
+            )
+            metadata_block = aggregated["metadata"]
+            metadata_block["title_page_image"] = _relative_image_path(page_images[0].path, output_dir)
+            metadata_block["raw_response"] = raw_title_text
+            if title_metadata:
+                student_name = title_metadata.get("student_name") or ""
+                metadata_block["student_name"] = str(student_name).strip()
+                confidence = title_metadata.get("student_name_confidence") or ""
+                metadata_block["student_name_confidence"] = str(confidence).strip()
+                raw_name = title_metadata.get("student_name_raw") or student_name
+                metadata_block["student_name_raw"] = str(raw_name).strip()
+                notes = title_metadata.get("notes")
+                if isinstance(notes, str) and notes.strip():
+                    metadata_block["notes"] = notes.strip()
+            for key, value in title_usage.items():
+                if key in aggregated["usage"]:
+                    aggregated["usage"][key] += int(value)
+        except Exception as exc:  # pragma: no cover - defensive
+            title_metadata_notes.append(f"Erreur d'extraction page titre: {exc}")
+    if title_metadata_notes:
+        existing_notes = aggregated["metadata"].get("notes")
+        note_parts = []
+        if isinstance(existing_notes, str) and existing_notes.strip():
+            note_parts.append(existing_notes.strip())
+        note_parts.extend(title_metadata_notes)
+        aggregated["metadata"]["notes"] = "; ".join(note_parts)
+
     write_json(analysis_path, aggregated)
     emit(
         "run:pages_ready",
@@ -605,16 +683,40 @@ def analysis_output_schema() -> Dict[str, Any]:
             "items",
             "stats",
             "usage",
+            "metadata",
         ],
         "properties": {
             "source_pdf": {"type": "string"},
             "model": {"type": "string"},
             "prompt_path": {"type": "string"},
+            "title_prompt_path": {"type": ["string", "null"]},
             "dpi": {"type": "integer", "minimum": 60},
             "user_label": {"type": ["string", "null"]},
             "started_at": {"type": "string", "format": "date-time"},
             "completed_at": {"type": ["string", "null"], "format": "date-time"},
             "duration_seconds": {"type": ["number", "null"], "minimum": 0},
+            "metadata": {
+                "type": "object",
+                "required": [
+                    "student_name",
+                    "student_name_confidence",
+                    "student_name_raw",
+                    "notes",
+                    "grading_date",
+                    "title_page_image",
+                    "raw_response",
+                ],
+                "properties": {
+                    "student_name": {"type": "string"},
+                    "student_name_confidence": {"type": "string"},
+                    "student_name_raw": {"type": "string"},
+                    "notes": {"type": "string"},
+                    "grading_date": {"type": "string"},
+                    "title_page_image": {"type": ["string", "null"]},
+                    "raw_response": {"type": "string"},
+                },
+                "additionalProperties": True,
+            },
             "stats": {
                 "type": "object",
                 "required": [

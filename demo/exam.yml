@@ -61,7 +61,7 @@ questions:
     allow_multiple: false
     points: 1
 
-  - id: q5
+  - id: 5
     type: multiple_fill_in
     question: |
       Inscrire après chaque syntaxe Python le type correspondant à l'expression.
@@ -126,8 +126,9 @@ questions:
   - type: multiple_fill_in
     question: "Quelles sont les deux méthodes spéciales utilisées pour obtenir un itérateur et l'utiliser ?"
     items:
-      - "__iter__"
-      - "__next__"
+      # Accept variations with or without double underscores
+      - {expected: "__iter__", pattern: "\b(?:__)?iter(?:__)?\b" }
+      - {expected: "__next__", accepted: ["next", "__next__", "__next"] }
     strict_order: false
     fill_width: 30
     points: 1
