@@ -5,3 +5,4 @@ venv/
 *.fdb_*
 *.out
 *:Zone.Identifier
+__pycache__/
