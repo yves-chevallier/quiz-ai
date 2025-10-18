@@ -31,6 +31,14 @@ from .report import GradeSummary, build_markdown_report, summarise_grade, write_
 from .utils import ensure_directory, read_json, write_json
 from .annotate import annotate_pdf
 from .anchors import load_anchors
+from .feedback import (
+    FeedbackInputs,
+    build_feedback_inputs,
+    generate_feedback_email,
+    load_grading_file,
+    resolve_student_name,
+    write_feedback_file,
+)
 
 from rich import box
 from rich.console import Console, Group
@@ -1000,6 +1008,101 @@ def report(
 
     build_markdown_report(summaries, output)
     typer.echo(f"Rapport Markdown généré → {output}")
+
+
+@app.command()
+def feedback(
+    grading_json: Annotated[
+        Path,
+        typer.Argument(help="Fichier JSON de notation généré par la commande grade.", exists=True, readable=True),
+    ],
+    output: Annotated[
+        Optional[Path],
+        typer.Option("-o", "--output", help="Fichier Markdown pour l'email de feedback.", dir_okay=False),
+    ] = None,
+    model: Annotated[
+        str,
+        typer.Option("--model", help="Modèle OpenAI pour la génération du feedback."),
+    ] = DEFAULT_VISION_MODEL,
+    prompt_path: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--prompt",
+            help="Prompt personnalisé pour la rédaction de l'email.",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+    name_prompt_path: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--name-prompt",
+            help="Prompt personnalisé pour l'extraction du nom sur la page de garde.",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+    user_label: Annotated[
+        Optional[str],
+        typer.Option("--user", help="Étiquette utilisateur transmise à l'API."),
+    ] = None,
+) -> None:
+    """
+    Générer un email de feedback motivant à partir d'un fichier de notation.
+    """
+    grades = load_grading_file(grading_json)
+    client = build_openai_client()
+
+    resolved_name, vision_data = resolve_student_name(
+        grading_json,
+        grades,
+        client=client,
+        model=model,
+        name_prompt_path=name_prompt_path,
+        user_label=user_label,
+    )
+
+    student_block = grades.get("student")
+    if resolved_name:
+        if not isinstance(student_block, dict):
+            student_block = {}
+        student_block["name"] = resolved_name
+        grades["student"] = student_block
+    elif not isinstance(student_block, dict):
+        grades["student"] = {}
+
+    payload = build_feedback_inputs(grades)
+    if resolved_name and not payload.student_name:
+        payload = FeedbackInputs(
+            student_name=resolved_name,
+            score_points=payload.score_points,
+            score_total=payload.score_total,
+            score_percentage=payload.score_percentage,
+            quiz_title=payload.quiz_title,
+            final_report=payload.final_report,
+            positive_topics=payload.positive_topics,
+            improvement_topics=payload.improvement_topics,
+        )
+
+    email_text = generate_feedback_email(
+        payload,
+        client=client,
+        model=model,
+        prompt_path=prompt_path,
+        user_label=user_label,
+    )
+
+    feedback_path = output or grading_json.with_name("feedback.md")
+    write_feedback_file(feedback_path, email_text)
+
+    if resolved_name:
+        typer.echo(f"Feedback généré pour {resolved_name} → {feedback_path}")
+    else:
+        typer.echo(f"Feedback généré (nom non identifié) → {feedback_path}")
+    if vision_data:
+        notes = vision_data.get("notes")
+        if isinstance(notes, str) and notes.strip():
+            typer.echo(f"Nota extraction nom : {notes.strip()}")
 
 
 def _build_feedback_payload(grades: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], Optional[Tuple[float, float]]]:
