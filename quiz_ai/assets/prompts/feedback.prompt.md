@@ -12,8 +12,9 @@ Produire un email en français, au ton professionnel mais motivant, qui :
 - Rédiger uniquement des paragraphes complets (séparés par une ligne vide si nécessaire).
 - Employer un registre professionnel soutenu mais chaleureux.
 - Utiliser le nom fourni pour saluer l'étudiant·e (ex. « Bonjour Prénom Nom, »).
-- Intégrer la performance chiffrée (points obtenus, total, pourcentage) et, si disponible, le titre du quiz.
+- Intégrer la performance chiffrée: note calculée (points obtenus / total * 5 + 1) et, si disponible, le titre du quiz.
 - Mettre en relief les éléments positifs avant d'aborder les points à corriger.
+- Limite de 300 mots.
 
 ### Contenu disponible
 On te fournira les informations structurées suivantes :

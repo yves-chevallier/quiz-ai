@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import io
+import logging
 import re
+import urllib.request
+import zipfile
 from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
@@ -30,8 +34,17 @@ from svglib.svglib import svg2rlg
 
 from .anchors import Anchors  # type: ignore[reportMissingImports]
 
+LOGGER = logging.getLogger(__name__)
+
 SCRIPT_PATH = Path(__file__).parent.resolve()
-FONT_HAND_PATH = SCRIPT_PATH / "assets/fonts/IndieFlower-Regular.ttf"
+FONT_STORAGE_DIR = SCRIPT_PATH / "assets" / "fonts"
+FONT_HAND_FILENAME = "IndieFlower-Regular.ttf"
+FONT_HAND_PATH = FONT_STORAGE_DIR / FONT_HAND_FILENAME
+FontSource = Tuple[str, Optional[str]]
+FONT_HAND_REMOTE_SOURCES: Tuple[FontSource, ...] = (
+    ("https://fonts.google.com/download?family=Indie%20Flower", FONT_HAND_FILENAME),
+    ("https://raw.githubusercontent.com/google/fonts/main/ofl/indieflower/IndieFlower-Regular.ttf", None),
+)
 
 # Geometry/appearance constants
 PT_TO_MM = 25.4 / 72.0
@@ -163,14 +176,94 @@ def _resolve_asset_path(path: Path) -> Path:
     return path
 
 
+def _download_bytes(url: str) -> Optional[bytes]:
+    """Download raw bytes from a URL."""
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (compatible; quiz-ai/1.0)",
+            },
+        )
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return response.read()
+    except Exception as exc:  # pragma: no cover - defensive
+        LOGGER.warning("Unable to fetch font from %s: %s", url, exc)
+        return None
+
+
+def _write_bytes(destination: Path, data: bytes) -> bool:
+    """Safely write bytes to disk."""
+    if not data:
+        LOGGER.warning("Empty font payload for %s", destination)
+        return False
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = destination.with_suffix(destination.suffix + ".tmp")
+    try:
+        tmp_path.write_bytes(data)
+        tmp_path.replace(destination)
+    except OSError as exc:
+        LOGGER.warning("Unable to store font at %s: %s", destination, exc)
+        with contextlib.suppress(OSError):
+            tmp_path.unlink(missing_ok=True)
+        return False
+
+    return True
+
+
+def _download_file(url: str, destination: Path) -> bool:
+    """Download a remote resource to destination, returning success."""
+    data = _download_bytes(url)
+    if data is None:
+        return False
+    return _write_bytes(destination, data)
+
+
+def _download_font_from_zip(url: str, member: str, destination: Path) -> bool:
+    """Download a ZIP archive containing fonts and extract the requested member."""
+    data = _download_bytes(url)
+    if data is None:
+        return False
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            with archive.open(member) as handle:
+                font_bytes = handle.read()
+    except KeyError:
+        LOGGER.warning("Font %s not found in archive from %s", member, url)
+        return False
+    except (zipfile.BadZipFile, OSError) as exc:
+        LOGGER.warning("Invalid font archive from %s: %s", url, exc)
+        return False
+
+    return _write_bytes(destination, font_bytes)
+
+
+def _ensure_font_cached(font_path: Path, sources: Iterable[FontSource]) -> Path:
+    """Ensure the handwriting font is available locally."""
+    if font_path.exists() and font_path.stat().st_size > 0:
+        return font_path
+
+    for url, member in sources:
+        if member:
+            if _download_font_from_zip(url, member, font_path):
+                return font_path
+        elif _download_file(url, font_path):
+            return font_path
+
+    return font_path
+
+
 def _resolve_font_path(font_path: Path | None) -> Path:
     candidate: Optional[Path] = None
     if font_path is not None:
         candidate = _resolve_asset_path(font_path)
         if candidate.exists():
             return candidate
-    if FONT_HAND_PATH.exists():
-        return FONT_HAND_PATH
+    default_font = _ensure_font_cached(FONT_HAND_PATH, FONT_HAND_REMOTE_SOURCES)
+    if default_font.exists():
+        return default_font
     if candidate is not None:
         return candidate
     return FONT_HAND_PATH

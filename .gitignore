@@ -9,3 +9,4 @@ __pycache__/
 analysis/
 anchors.json
 out/
+quiz_ai/assets/fonts/*.ttf
