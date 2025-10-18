@@ -1,28 +1,27 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from pathlib import Path
 import io
 import random
 import re
+from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import fitz  # PyMuPDF
+from reportlab import rl_config
+from reportlab.graphics import renderPDF
+from reportlab.lib import colors
+from reportlab.lib.colors import Color
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import mm
 
 # ReportLab
 from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
-from reportlab.platypus import Frame, Paragraph, KeepInFrame
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
-from reportlab.lib.colors import Color
-from reportlab import rl_config
+from reportlab.platypus import Frame, KeepInFrame, Paragraph
 
 # svglib
 from svglib.svglib import svg2rlg
-from reportlab.graphics import renderPDF
-from reportlab.lib import colors
-
 
 # =========================
 # === Constantes & I/O ====
@@ -138,9 +137,7 @@ def _base_paragraph_style() -> ParagraphStyle:
     )
 
 
-def overlay_pdf(
-    page_size_pts: Tuple[float, float], items: List[Dict[str, Any]]
-) -> bytes:
+def overlay_pdf(page_size_pts: Tuple[float, float], items: List[Dict[str, Any]]) -> bytes:
     """
     Construit une page d’overlay (repère bas-gauche). Supporte:
       - kind="mark": texte centré (petite annotation)
@@ -206,8 +203,7 @@ def overlay_pdf(
                 name="box",
                 parent=base_style,
                 fontSize=it.get("fontSize", base_style.fontSize),
-                leading=it.get("leading", None)
-                or int(1.2 * it.get("fontSize", base_style.fontSize)),
+                leading=it.get("leading", None) or int(1.2 * it.get("fontSize", base_style.fontSize)),
                 alignment=it.get("align", TA_LEFT),
             )
 
@@ -225,9 +221,7 @@ def overlay_pdf(
 # =========================
 # === Génération items ====
 # =========================
-def grade_box_items_for_first_page(
-    page: fitz.Page, grade: float = 4.2
-) -> List[Dict[str, Any]]:
+def grade_box_items_for_first_page(page: fitz.Page, grade: float = 4.2) -> List[Dict[str, Any]]:
     """Boîte de note sur la première page (en haut-droite)."""
     page_w_mm = page.rect.width * PT_TO_MM
     page_h_mm = page.rect.height * PT_TO_MM
@@ -328,9 +322,7 @@ def main() -> None:
             # Page 1 : boîte de note puis on passe à la suivante (comportement d’origine)
             if pno == 0:
                 items = grade_box_items_for_first_page(page, grade=4.2)
-                ov = fitz.open(
-                    "pdf", overlay_pdf((page.rect.width, page.rect.height), items)
-                )
+                ov = fitz.open("pdf", overlay_pdf((page.rect.width, page.rect.height), items))
                 page.show_pdf_page(page.rect, ov, 0)
                 ov.close()
                 continue
@@ -343,9 +335,7 @@ def main() -> None:
             if not items:
                 continue
 
-            ov = fitz.open(
-                "pdf", overlay_pdf((page.rect.width, page.rect.height), items)
-            )
+            ov = fitz.open("pdf", overlay_pdf((page.rect.width, page.rect.height), items))
             page.show_pdf_page(page.rect, ov, 0)
             ov.close()
 

@@ -1,9 +1,10 @@
 from pathlib import Path
-from reportlab.pdfgen import canvas
+
+import fitz  # PyMuPDF
+from reportlab.lib.colors import magenta
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
-from reportlab.lib.colors import magenta
-import fitz  # PyMuPDF
+from reportlab.pdfgen import canvas
 
 # --- chemins ---
 PDF_INPUT = Path("pdfs/2025-10-16-14-46-25.pdf")

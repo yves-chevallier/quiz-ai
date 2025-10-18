@@ -20,21 +20,21 @@ Notes:
 from __future__ import annotations
 
 import base64
+import csv
 import io
 import json
-import csv
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+import httpx
 import typer
+import yaml
+from openai import OpenAI
+from pdf2image import convert_from_path
+from PIL import Image
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-
-import yaml
-from pdf2image import convert_from_path
-from PIL import Image
-from openai import OpenAI
 
 app = typer.Typer(
     help="Pipeline d'analyse et de grading de copies PDF",
@@ -65,9 +65,7 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def pil_image_to_jpeg_data_url(
-    img: Image.Image, max_side: int = 1600, quality: int = 65
-) -> str:
+def pil_image_to_jpeg_data_url(img: Image.Image, max_side: int = 1600, quality: int = 65) -> str:
     if img.mode != "RGB":
         img = img.convert("RGB")
     w, h = img.size
@@ -88,9 +86,7 @@ def pil_image_to_data_url(img: Image.Image) -> str:
     return f"data:image/png;base64,{b64}"
 
 
-def pdf_to_pil_images_in_memory(
-    pdf_path: Path, dpi: int = DPI_IMAGES
-) -> List[Image.Image]:
+def pdf_to_pil_images_in_memory(pdf_path: Path, dpi: int = DPI_IMAGES) -> List[Image.Image]:
     return convert_from_path(str(pdf_path), dpi=dpi)
 
 
@@ -133,10 +129,6 @@ def solution_points_map(solution: Dict[str, Any]) -> Dict[int, float]:
     return mapping
 
 
-# ---------- OPENAI HELPERS ----------
-import httpx
-
-
 def openai_client() -> OpenAI:
     # Client HTTPx personnalisable :
     http_client = httpx.Client(
@@ -144,7 +136,7 @@ def openai_client() -> OpenAI:
         # http2=False,            # désactive HTTP/2 (certains proxies le cassent sur POST)
         verify=True,  # laisse True (si besoin, tu peux pointer vers un bundle certifi)
     )
-    return OpenAI()
+    return OpenAI(http_client=http_client)
     #     timeout=500.0,
     #     max_retries=5,
     #     #http_client=http_client,
@@ -152,15 +144,11 @@ def openai_client() -> OpenAI:
 
 
 # ---------- IDENTIFY CONTENT ----------
-def identify_content(
-    images_data_urls: List[str], client: OpenAI, model: str
-) -> Dict[str, Any]:
+def identify_content(images_data_urls: List[str], client: OpenAI, model: str) -> Dict[str, Any]:
     """
     Envoie toutes les pages à la fois. Retourne un JSON structuré strict (voir prompt).
     """
-    imgs = [
-        {"type": "image_url", "image_url": {"url": url}} for url in images_data_urls
-    ]
+    imgs = [{"type": "image_url", "image_url": {"url": url}} for url in images_data_urls]
     messages = [
         {
             "role": "system",
@@ -168,8 +156,7 @@ def identify_content(
         },
         {
             "role": "user",
-            "content": [{"type": "text", "text": "Analyze this quiz (all pages):"}]
-            + imgs,
+            "content": [{"type": "text", "text": "Analyze this quiz (all pages):"}] + imgs,
         },
     ]
     resp = client.chat.completions.create(
@@ -181,9 +168,7 @@ def identify_content(
 
 
 # ---------- GRADING ----------
-def run_grading(
-    analysis: Dict[str, Any], solution: Dict[str, Any], client: OpenAI, model: str
-) -> Dict[str, Any]:
+def run_grading(analysis: Dict[str, Any], solution: Dict[str, Any], client: OpenAI, model: str) -> Dict[str, Any]:
     """
     Produit un JSON strict de grading. Le modèle calcule correctness + granted_points (0..1 par question).
     On gardera ensuite la conversion en points réels côté Python pour le CSV.
@@ -239,9 +224,7 @@ Rules:
 
 
 # ---------- RÉSUMÉ CSV ----------
-def compute_points_from_grades(
-    grades: Dict[str, Any], solution: Dict[str, Any]
-) -> Tuple[float, float]:
+def compute_points_from_grades(grades: Dict[str, Any], solution: Dict[str, Any]) -> Tuple[float, float]:
     """
     Convertit granted_ratio (0..1) -> points réels selon la solution.
     """
@@ -255,18 +238,14 @@ def compute_points_from_grades(
     return got, total_points
 
 
-def write_summary_csv(
-    grades_path: Path, solution: Dict[str, Any], out_csv: Path
-) -> None:
+def write_summary_csv(grades_path: Path, solution: Dict[str, Any], out_csv: Path) -> None:
     grades = load_json(grades_path)
     got, tot = compute_points_from_grades(grades, solution)
     note = round(((got / tot) * 5.0 + 1.0), 1) if tot else None
 
     # minimal CSV (une ligne pour ce PDF)
     with out_csv.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=["file", "points_obtenus", "points_total", "note"]
-        )
+        writer = csv.DictWriter(f, fieldnames=["file", "points_obtenus", "points_total", "note"])
         writer.writeheader()
         writer.writerow(
             {
@@ -287,26 +266,16 @@ def run_pipeline(
         "-s",
         help="Chemin du fichier solutions YAML",
     ),
-    pdf_path: Path = typer.Option(
-        DEFAULT_PDF, "--pdf", "-p", help="Chemin du PDF à analyser"
-    ),
-    out_dir: Path = typer.Option(
-        OUT_DIR, "--out", help="Dossier de sortie pour les JSON/CSV"
-    ),
+    pdf_path: Path = typer.Option(DEFAULT_PDF, "--pdf", "-p", help="Chemin du PDF à analyser"),
+    out_dir: Path = typer.Option(OUT_DIR, "--out", help="Dossier de sortie pour les JSON/CSV"),
     model: str = typer.Option(MODEL_VISION, "--model", help="Modèle vision"),
-    dpi: int = typer.Option(
-        DPI_IMAGES, "--dpi", help="DPI pour l'extraction des pages"
-    ),
-    force: bool = typer.Option(
-        False, "--force", help="Recalculer même si les caches existent"
-    ),
+    dpi: int = typer.Option(DPI_IMAGES, "--dpi", help="DPI pour l'extraction des pages"),
+    force: bool = typer.Option(False, "--force", help="Recalculer même si les caches existent"),
 ):
     """
     Exécute la pipeline complète avec cache des étapes.
     """
-    console.print(
-        Panel.fit("[bold cyan]Pipeline Quiz → Analyse → Grading → Résumé[/bold cyan]")
-    )
+    console.print(Panel.fit("[bold cyan]Pipeline Quiz → Analyse → Grading → Résumé[/bold cyan]"))
 
     # 0) Préparatifs
     ensure_out_dir(out_dir)
@@ -355,44 +324,30 @@ def run_pipeline(
 
     # Data URLs pour le modèle (pas d'écriture PNG)
     # images_data_urls = [pil_image_to_data_url(img) for img in images]
-    images_data_urls = [
-        pil_image_to_jpeg_data_url(img, max_side=1800, quality=70) for img in images
-    ]
+    images_data_urls = [pil_image_to_jpeg_data_url(img, max_side=1800, quality=70) for img in images]
 
-    approx_mb = (
-        sum(len(u.split(",", 1)[1]) for u in images_data_urls) * 3 / 4 / (1024 * 1024)
-    )
+    approx_mb = sum(len(u.split(",", 1)[1]) for u in images_data_urls) * 3 / 4 / (1024 * 1024)
     print(f"Payload images ~ {approx_mb:.1f} MB")
 
     client = openai_client()
 
     # 3) identify_content (cache: out/analysis.json)
-    console.rule(
-        "[bold]Étape 3[/bold] • Analyse des images par le modèle (identify_content)"
-    )
+    console.rule("[bold]Étape 3[/bold] • Analyse des images par le modèle (identify_content)")
     if analysis_json_path.exists() and not force:
-        typer.secho(
-            f"Analyse déjà présente → {analysis_json_path}", fg=typer.colors.YELLOW
-        )
+        typer.secho(f"Analyse déjà présente → {analysis_json_path}", fg=typer.colors.YELLOW)
         analysis = load_json(analysis_json_path)
     else:
-        typer.secho(
-            "Appel modèle (toutes les pages en une fois)…", fg=typer.colors.CYAN
-        )
+        typer.secho("Appel modèle (toutes les pages en une fois)…", fg=typer.colors.CYAN)
         analysis = identify_content(images_data_urls, client, model=model)
         # Ajout meta légère
         analysis["_source_pdf"] = str(pdf_path)
         save_json(analysis_json_path, analysis)
-        typer.secho(
-            f"Analyse sauvegardée → {analysis_json_path}", fg=typer.colors.GREEN
-        )
+        typer.secho(f"Analyse sauvegardée → {analysis_json_path}", fg=typer.colors.GREEN)
 
     # 4) grading (cache: out/grades.json)
     console.rule("[bold]Étape 4[/bold] • Grading à partir de l'analyse + solution")
     if grades_json_path.exists() and not force:
-        typer.secho(
-            f"Grading déjà présent → {grades_json_path}", fg=typer.colors.YELLOW
-        )
+        typer.secho(f"Grading déjà présent → {grades_json_path}", fg=typer.colors.YELLOW)
         grades = load_json(grades_json_path)
     else:
         typer.secho("Appel modèle (grading)…", fg=typer.colors.CYAN)

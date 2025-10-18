@@ -11,8 +11,11 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
 import fitz  # PyMuPDF
-from pydantic import BaseModel, Field
-from pydantic import model_validator  # Pydantic v2
+from pydantic import (
+    BaseModel,
+    Field,
+    model_validator,  # Pydantic v2
+)
 
 PT_TO_MM: float = 25.4 / 72.0
 INCLUDE_BOTTOM_SEGMENT_DEFAULT: bool = True
@@ -58,8 +61,7 @@ class PageAnchors(BaseModel):
 class Anchors(BaseModel):
     """Top-level result schema."""
 
-    pages: List[PageAnchors] = Field(
-        default_factory=list, description="Per-page anchors and regions.")
+    pages: List[PageAnchors] = Field(default_factory=list, description="Per-page anchors and regions.")
 
     def json_pretty(self) -> str:
         """Convenience pretty JSON."""
@@ -175,7 +177,7 @@ def extract_anchors(
     try:
         pages_out: List[PageAnchors] = []
         # Use explicit indexing to avoid Pylance complaining about Document being non-iterable
-        for pno in range(len(doc)): # pylint: disable=consider-using-enumerate
+        for pno in range(len(doc)):  # pylint: disable=consider-using-enumerate
             page = doc[pno]
             height_mm = page.rect.height * PT_TO_MM
 

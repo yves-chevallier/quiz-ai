@@ -1,6 +1,7 @@
 # pip install openai
 import base64
 from pathlib import Path
+
 from openai import OpenAI
 
 # --- Inputs (files you mentioned) ---

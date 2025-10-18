@@ -1,14 +1,15 @@
 # script_pipeline.py
-import json
+import argparse
 import base64
 import csv
-import argparse
+import json
+import time
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+import fitz  # PyMuPDF
 from openai import OpenAI
 from pdf2image import convert_from_path
-import fitz  # PyMuPDF
-import time
 
 # =============== CONFIG ===============
 DPI_IMAGES = 220
@@ -286,10 +287,7 @@ def identify_content(image_paths: List[str]) -> List[Dict[str, Any]]:
     - The model must produce **only valid JSON** following the structure above.
     """
 
-    images = [
-        {"type": "image_url", "image_url": {"url": img_to_data_url(Path(path))}}
-        for path in image_paths
-    ]
+    images = [{"type": "image_url", "image_url": {"url": img_to_data_url(Path(path))}} for path in image_paths]
     start = time.perf_counter()
 
     resp = client.chat.completions.create(
@@ -316,11 +314,16 @@ def identify_content(image_paths: List[str]) -> List[Dict[str, Any]]:
     return json.loads(resp.choices[0].message.content)
 
 
+def analyze_images_for_pdf(image_paths: List[str]) -> Any:
+    """
+    Wrapper autour de identify_content pour conserver la compatibilité historique.
+    """
+    return identify_content(image_paths)
+
+
 # ---------- 3) Vision sur images (par PDF) ----------
-def grading(analysis: str, solutions: str) -> Dict[str, Any]:
-    """
-    Retourne une liste de pages JSON (une entrée par page).
-    """
+def grade_student_via_model(solutions: Dict[str, Any], analysis: Dict[str, Any]) -> Dict[str, Any]:
+    """Évalue un élève à partir de la solution officielle et de l'analyse vision."""
 
     SYSTEM_PROMPT = """
     You are an impartial and precise human corrector.
@@ -393,9 +396,23 @@ def grading(analysis: str, solutions: str) -> Dict[str, Any]:
     - The model must produce **only valid JSON** following the structure above.
     """
 
-    images = [
-        {"type": "image_url", "image_url": {"url": img_to_data_url(Path(path))}}
-        for path in image_paths
+    payload = [
+        {
+            "type": "text",
+            "text": "Official solution JSON:",
+        },
+        {
+            "type": "text",
+            "text": json.dumps(solutions, ensure_ascii=False, indent=2),
+        },
+        {
+            "type": "text",
+            "text": "Student analysis JSON:",
+        },
+        {
+            "type": "text",
+            "text": json.dumps(analysis, ensure_ascii=False, indent=2),
+        },
     ]
     start = time.perf_counter()
 
@@ -406,7 +423,7 @@ def grading(analysis: str, solutions: str) -> Dict[str, Any]:
             {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
-                "content": [{"type": "text", "text": "Analyze this quiz"}] + images,
+                "content": payload,
             },
         ],
         # temperature=0
@@ -423,9 +440,7 @@ def grading(analysis: str, solutions: str) -> Dict[str, Any]:
     return json.loads(resp.choices[0].message.content)
 
 
-def run_analysis_all_pdfs(
-    artifacts: Dict[str, List[str]], force: bool = False
-) -> Dict[str, str]:
+def run_analysis_all_pdfs(artifacts: Dict[str, List[str]], force: bool = False) -> Dict[str, str]:
     """
     Pour chaque PDF => génère out/{basename}.student_data.json
     Retourne un mapping pdf -> chemin json
@@ -446,9 +461,7 @@ def run_analysis_all_pdfs(
     return mapping
 
 
-def run_grading_all(
-    solutions: Dict[str, Any], student_json_map: Dict[str, str], force: bool = False
-) -> Dict[str, str]:
+def run_grading_all(solutions: Dict[str, Any], student_json_map: Dict[str, str], force: bool = False) -> Dict[str, str]:
     """
     Pour chaque PDF => génère out/{basename}.grades.json
     Retourne mapping pdf -> grades_json
@@ -470,6 +483,19 @@ def run_grading_all(
     return out_map
 
 
+def annotate_all_pdfs(student_map: Dict[str, str], grades_map: Dict[str, str], force: bool = False) -> None:
+    """
+    Placeholder d'annotation : journalise simplement l'étape dans le sandbox.
+    """
+    if not grades_map:
+        return
+    for pdf, grades_path in grades_map.items():
+        _ = student_map.get(pdf)
+        print(f"[5] Annotation ignorée → {pdf} (grades: {grades_path})")
+    if force:
+        print("[5] Mode forcé activé mais aucune annotation n'est exécutée dans ce sandbox.")
+
+
 # ---------- 6) Résumé ----------
 def build_summary_csv(grades_map: Dict[str, str], out_csv: Path):
     rows = []
@@ -488,9 +514,7 @@ def build_summary_csv(grades_map: Dict[str, str], out_csv: Path):
             }
         )
     with out_csv.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(
-            f, fieldnames=["file", "points_obtenus", "points_total", "note"]
-        )
+        w = csv.DictWriter(f, fieldnames=["file", "points_obtenus", "points_total", "note"])
         w.writeheader()
         w.writerows(rows)
     print(f"[6] Résumé → {out_csv}")
@@ -501,9 +525,7 @@ def main(force: bool = False):
     ensure_dirs()
 
     # 1) solutions.json
-    solutions = extract_solutions_from_tex(
-        Path("exam.tex"), SOLUTIONS_JSON, force=force
-    )
+    solutions = extract_solutions_from_tex(Path("exam.tex"), SOLUTIONS_JSON, force=force)
 
     # 2) artefacts (png pour tous les PDFs du dossier)
     pdfs = sorted([p for p in PDF_DIR.glob("*.pdf")])

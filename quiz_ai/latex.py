@@ -5,7 +5,7 @@ Simple converter from the repository YAML schema to a LaTeX document.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, List
 
 from .utils import read_yaml, write_text
 

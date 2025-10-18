@@ -9,15 +9,19 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from openai import OpenAI
 
 from .anchors import Anchors, extract_anchors, load_anchors
 from .decompose import PdfCutter, RegionCrop
-from .llm import DEFAULT_VISION_MODEL, build_openai_client, call_vision, image_file_to_data_url
+from .llm import (
+    DEFAULT_VISION_MODEL,
+    build_openai_client,
+    call_vision,
+    image_file_to_data_url,
+)
 from .utils import ensure_directory, write_json
-
 
 PROMPT_PATH = Path(__file__).resolve().parent / "assets" / "prompts" / "analysis.prompt.md"
 TITLE_PROMPT_PATH = Path(__file__).resolve().parent / "assets" / "prompts" / "title_page.prompt.md"
@@ -786,7 +790,14 @@ def analysis_output_schema() -> Dict[str, Any]:
                         "image": {"type": "string"},
                         "raw_response": {"type": "string"},
                         "json": {
-                            "type": ["object", "array", "string", "number", "boolean", "null"],
+                            "type": [
+                                "object",
+                                "array",
+                                "string",
+                                "number",
+                                "boolean",
+                                "null",
+                            ],
                         },
                         "question_kind": {"type": ["string", "null"]},
                         "summary": {"type": ["string", "null"]},

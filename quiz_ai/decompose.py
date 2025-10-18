@@ -20,6 +20,7 @@ from .anchors import Anchors, PageAnchors  # type: ignore[reportMissingImports]
 @dataclass(frozen=True)
 class PageImage:
     """Represents a rendered page image on disk."""
+
     page_index: int
     path: Path
     width: int
@@ -29,6 +30,7 @@ class PageImage:
 @dataclass(frozen=True)
 class CropBox:
     """Pillow box coordinates (left, top, right, bottom) in pixels."""
+
     left: int
     top: int
     right: int
@@ -44,6 +46,7 @@ class CropBox:
 @dataclass(frozen=True)
 class RegionCrop:
     """Represents a cropped region for a specific question."""
+
     question_id: int
     page_index: int
     region_index: int
@@ -141,8 +144,14 @@ class PdfCutter:
                 out_path = out_dir / f"{pdf_path.stem}_page{pno+1}.jpg"
                 _save_pillow_image(img, out_path, self.quality)
 
-                written.append(PageImage(page_index=pno, path=out_path,
-                                         width=img.width, height=img.height))
+                written.append(
+                    PageImage(
+                        page_index=pno,
+                        path=out_path,
+                        width=img.width,
+                        height=img.height,
+                    )
+                )
 
         return written
 
@@ -233,7 +242,7 @@ class PdfCutter:
                 page_height_mm=page_height_mm,
                 output_dir=out_dir,
                 page_index=page_img.page_index,
-                base_output_stem=page_img.path.stem
+                base_output_stem=page_img.path.stem,
             )
             all_written.extend(written)
 
@@ -241,6 +250,7 @@ class PdfCutter:
 
 
 # Convenience functional API, if you prefer functions over the class
+
 
 def render_pdf_to_images(
     pdf_path: Path,

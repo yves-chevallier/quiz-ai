@@ -194,9 +194,7 @@ def maybe_multicols_close(n_choices: int) -> str:
     return ""
 
 
-def render_choices(
-    choices: List[str], correct_spec: Union[int, List[int], None]
-) -> str:
+def render_choices(choices: List[str], correct_spec: Union[int, List[int], None]) -> str:
     # Normalize correct indices to a set of 1-based positions
     correct: set[int] = set()
     if isinstance(correct_spec, int):
@@ -333,9 +331,7 @@ def render_document(data: Dict[str, Any]) -> str:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(
-        description="Convert YAML quiz to LaTeX exam (exam class)"
-    )
+    ap = argparse.ArgumentParser(description="Convert YAML quiz to LaTeX exam (exam class)")
     ap.add_argument("input", type=Path, help="Path to YAML input file")
     ap.add_argument(
         "-o",

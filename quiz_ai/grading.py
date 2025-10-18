@@ -15,7 +15,6 @@ from openai import OpenAI
 from .llm import DEFAULT_VISION_MODEL, build_openai_client
 from .utils import read_yaml
 
-
 PROMPT_PATH = Path(__file__).resolve().parent / "assets" / "prompts" / "grading.prompt.md"
 
 

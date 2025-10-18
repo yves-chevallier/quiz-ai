@@ -12,7 +12,6 @@ from typing import Any, Optional
 import httpx
 from openai import OpenAI
 
-
 DEFAULT_VISION_MODEL = "gpt-5"
 
 

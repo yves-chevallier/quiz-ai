@@ -1,31 +1,32 @@
 """Annotate a PDF with feedback icons and comments at question anchors."""
+
 from __future__ import annotations
 
 import io
 import re
-from pathlib import Path
+from dataclasses import dataclass
 from fractions import Fraction
-from typing import Dict, Iterable, List, Tuple, Optional, Union, Literal
+from pathlib import Path
+from typing import Dict, Iterable, List, Literal, Optional, Tuple, Union
 
 import fitz  # PyMuPDF
-from dataclasses import dataclass
-# ReportLab (move these to top-level to avoid import-outside-toplevel)
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
-from reportlab.platypus import Frame, Paragraph, KeepInFrame
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_LEFT
-from reportlab.lib.colors import Color
 from reportlab import rl_config
+from reportlab.graphics import renderPDF
+from reportlab.graphics.shapes import Drawing
+from reportlab.lib import colors
+from reportlab.lib.colors import Color
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
+# ReportLab (move these to top-level to avoid import-outside-toplevel)
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Frame, KeepInFrame, Paragraph
+
 # svglib
 from svglib.svglib import svg2rlg
-from reportlab.graphics import renderPDF
-from reportlab.lib import colors
-from reportlab.graphics.shapes import Drawing
-
 
 from .anchors import Anchors  # type: ignore[reportMissingImports]
 
@@ -46,9 +47,11 @@ PEN_COLOR = (0.85, 0.10, 0.10)
 ICON_EXTRA_SHIFT_X_MM = 5.0
 ANNOTATION_EXTRA_WIDTH_MM = 10.0  # Extend comment boxes by 1cm
 
+
 @dataclass(frozen=True)
 class MarkItem:
     """Represents a mark (text stamp) on the PDF."""
+
     kind: Literal["mark"]
     x_mm: float
     y_mm: float
@@ -56,11 +59,13 @@ class MarkItem:
     fontsize: int
     align: Literal["left", "center", "right"] = "center"
 
+
 @dataclass(frozen=True)
 class SvgItem:
     """
     Represents an SVG image on the PDF.
     """
+
     kind: Literal["svg"]
     path: Path
     x_mm: float
@@ -69,11 +74,13 @@ class SvgItem:
     h_mm: float
     color: Tuple[float, float, float]
 
+
 @dataclass(frozen=True)
 class TextBoxItem:
     """
     Represents a text box on the PDF.
     """
+
     kind: Literal["textbox"]
     x_mm: float
     y_mm: float
@@ -85,12 +92,14 @@ class TextBoxItem:
     align: int  # TA_LEFT/TA_RIGHT/TA_CENTER
     overflow: Literal["shrink", "truncate"]  # whatever you use
 
+
 OverlayItem = Union[MarkItem, SvgItem, TextBoxItem]
 
 
 @dataclass(frozen=True)
 class Feedback:
     """Single feedback item mapped to a question id (anchor qnum)."""
+
     id: int
     status: Literal["correct", "incorrect", "partial", "unknown"]
     comment: str
@@ -289,7 +298,6 @@ def _register_hand_font(c: canvas.Canvas, font_path: Path | None = None) -> None
         c.setFont("Helvetica", 12)
 
 
-
 def _recolor_drawing(drawing, rgb: Tuple[float, float, float]) -> None:
     """Recursively apply fill/stroke colors to an svglib drawing."""
     if hasattr(drawing, "contents"):
@@ -395,7 +403,6 @@ def _overlay_pdf(
     c.showPage()
     c.save()
     return buf.getvalue()
-
 
 
 def _items_from_anchors_for_page(
