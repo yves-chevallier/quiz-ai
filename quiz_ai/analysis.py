@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from openai import OpenAI
+from PIL import Image
 
 from .anchors import Anchors, extract_anchors, load_anchors
 from .decompose import PdfCutter, RegionCrop
@@ -240,6 +241,48 @@ def _relative_image_path(image_path: Path, base_dir: Path) -> str:
         return str(image_path)
 
 
+def _create_title_crop_image(
+    image_path: Path,
+    output_dir: Path,
+    *,
+    top_fraction: float = 0.2,
+) -> Path:
+    """
+    Create an image containing only the top `top_fraction` of the provided page image.
+
+    Returns the path to the cropped image saved alongside the original renders.
+    """
+    if not image_path.exists():
+        raise FileNotFoundError(f"Cannot crop missing image: {image_path}")
+    if not 0 < top_fraction <= 1:
+        raise ValueError("top_fraction must be in (0, 1].")
+
+    suffix = image_path.suffix.lower()
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
+        suffix = ".jpg"
+
+    crop_height_label = int(round(top_fraction * 100))
+    dest_path = output_dir / f"{image_path.stem}_top{crop_height_label}{suffix}"
+
+    with Image.open(image_path) as img:
+        width, height = img.size
+        crop_height = max(1, int(round(height * top_fraction)))
+        crop_box = (0, 0, width, crop_height)
+        cropped = img.crop(crop_box)
+
+        if suffix in {".jpg", ".jpeg", ".webp"} and cropped.mode != "RGB":
+            cropped = cropped.convert("RGB")
+
+        if suffix in {".jpg", ".jpeg"}:
+            cropped.save(dest_path, format="JPEG", quality=95, optimize=True)
+        elif suffix == ".png":
+            cropped.save(dest_path, format="PNG")
+        else:  # .webp
+            cropped.save(dest_path, format="WEBP", quality=95)
+
+    return dest_path
+
+
 def _extract_title_metadata(
     client: OpenAI,
     *,
@@ -339,6 +382,7 @@ def run_analysis(
             "notes": "",
             "grading_date": started_at.split("T")[0],
             "title_page_image": None,
+            "title_page_image_full": None,
             "raw_response": "",
         },
         "items": [],
@@ -361,15 +405,27 @@ def run_analysis(
     title_metadata_notes: List[str] = []
     if page_images and effective_title_prompt and effective_title_prompt.exists():
         try:
+            metadata_block = aggregated["metadata"]
+            title_image_path = page_images[0].path
+            metadata_block["title_page_image_full"] = _relative_image_path(title_image_path, output_dir)
+            try:
+                cropped_title_path = _create_title_crop_image(
+                    title_image_path,
+                    images_dir,
+                    top_fraction=0.2,
+                )
+            except Exception as crop_error:  # pragma: no cover - defensive fallback
+                title_metadata_notes.append(f"Top-of-page crop failed: {crop_error}")
+                cropped_title_path = title_image_path
+
+            metadata_block["title_page_image"] = _relative_image_path(cropped_title_path, output_dir)
             title_metadata, title_usage, raw_title_text = _extract_title_metadata(
                 client,
-                image_path=page_images[0].path,
+                image_path=cropped_title_path,
                 prompt_path=effective_title_prompt,
                 model=model,
                 user_label=user_label,
             )
-            metadata_block = aggregated["metadata"]
-            metadata_block["title_page_image"] = _relative_image_path(page_images[0].path, output_dir)
             metadata_block["raw_response"] = raw_title_text
             if title_metadata:
                 student_name = title_metadata.get("student_name") or ""
@@ -717,6 +773,7 @@ def analysis_output_schema() -> Dict[str, Any]:
                     "notes": {"type": "string"},
                     "grading_date": {"type": "string"},
                     "title_page_image": {"type": ["string", "null"]},
+                    "title_page_image_full": {"type": ["string", "null"]},
                     "raw_response": {"type": "string"},
                 },
                 "additionalProperties": True,
