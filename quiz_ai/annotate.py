@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import io
-from typing import Dict, List, Tuple, Optional, Union, Literal, TypedDict
+from typing import Dict, Iterable, List, Tuple, Optional, Union, Literal, TypedDict
 
 import fitz  # PyMuPDF
 from dataclasses import dataclass
@@ -94,11 +94,12 @@ class Feedback:
     comment: str
 
 
-def _register_hand_font(c: canvas.Canvas) -> None:
+def _register_hand_font(c: canvas.Canvas, font_path: Path | None = None) -> None:
     """Register a handwriting font if available; fallback to Helvetica."""
+    font_to_use = font_path or FONT_HAND_PATH
     try:
-        if FONT_HAND_PATH.exists():
-            pdfmetrics.registerFont(TTFont("HandFont", str(FONT_HAND_PATH)))
+        if font_to_use.exists():
+            pdfmetrics.registerFont(TTFont("HandFont", str(font_to_use)))
             c.setFont("HandFont", 14)
         else:
             c.setFont("Helvetica", 12)
@@ -121,13 +122,15 @@ def _recolor_drawing(drawing, rgb: Tuple[float, float, float]) -> None:
 def _overlay_pdf(
     page_size_pts: Tuple[float, float],
     items: List[OverlayItem],
+    *,
+    font_path: Path | None = None,
 ) -> bytes:
     """Build a one-page overlay PDF (bottom-left origin)."""
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=page_size_pts)
 
     rl_config.warnOnMissingFontGlyphs = False
-    _register_hand_font(c)
+    _register_hand_font(c, font_path=font_path)
 
     base_style = ParagraphStyle(
         name="base",
@@ -210,6 +213,9 @@ def _items_from_anchors_for_page(
     feedback_by_id: Dict[int, Dict[str, Union[bool, str]]],
     check_svg: Path,
     cross_svg: Path,
+    *,
+    page_w_mm: float | None = None,
+    page_h_mm: float | None = None,
 ) -> List[OverlayItem]:
     """Build overlay items for one page from anchors and feedback mapping."""
     items: List[OverlayItem] = []

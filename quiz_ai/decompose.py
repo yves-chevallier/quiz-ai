@@ -41,6 +41,15 @@ class CropBox:
         return (self.left, self.top, self.right, self.bottom)
 
 
+@dataclass(frozen=True)
+class RegionCrop:
+    """Represents a cropped region for a specific question."""
+    question_id: int
+    page_index: int
+    region_index: int
+    path: Path
+
+
 def mm_region_to_pixel_box(
     img_w: int,
     img_h: int,
@@ -143,13 +152,14 @@ class PdfCutter:
         regions_mm: Iterable[Dict[str, float]],
         page_height_mm: float,
         output_dir: Path,
+        page_index: int,
         base_output_stem: Optional[str] = None,
         out_ext: Optional[str] = None,
-    ) -> List[Path]:
+    ) -> List[RegionCrop]:
         """
         Open a page image and crop all provided regions. Returns the list of created files.
         """
-        written: List[Path] = []
+        written: List[RegionCrop] = []
         if not image_path.exists():
             return written
 
@@ -165,13 +175,21 @@ class PdfCutter:
             for i, reg in enumerate(regions_mm, start=1):
                 y_start = float(reg["y_start_mm"])
                 y_end = float(reg["y_end_mm"])
+                qnum = int(reg["qnum"])
                 box = mm_region_to_pixel_box(w, h, page_height_mm, y_start, y_end)
 
                 cropped = im.crop(box.as_tuple())
                 out_name = f"{base_stem}_{i}.{ext}"
                 out_path = output_dir / out_name
                 _save_pillow_image(cropped, out_path, self.quality)
-                written.append(out_path)
+                written.append(
+                    RegionCrop(
+                        question_id=qnum,
+                        page_index=page_index,
+                        region_index=i,
+                        path=out_path,
+                    )
+                )
 
         return written
 
@@ -181,7 +199,7 @@ class PdfCutter:
         anchors: Anchors,
         out_dir: Path,
         skip_empty: bool = False,
-    ) -> List[Path]:
+    ) -> List[RegionCrop]:
         """
         Render the PDF to images and crop each page according to `anchors.pages[*].regions_mm`.
 
@@ -191,7 +209,7 @@ class PdfCutter:
         page_images = self.render_pdf_to_images(pdf_path, out_dir)
 
         pages_by_index: Dict[int, PageAnchors] = {p.page_index: p for p in anchors.pages}
-        all_written: List[Path] = []
+        all_written: List[RegionCrop] = []
 
         for page_img in page_images:
             entry = pages_by_index.get(page_img.page_index)
@@ -214,6 +232,7 @@ class PdfCutter:
                 regions_mm=regions_mm,
                 page_height_mm=page_height_mm,
                 output_dir=out_dir,
+                page_index=page_img.page_index,
                 base_output_stem=page_img.path.stem
             )
             all_written.extend(written)
@@ -242,11 +261,15 @@ def crop_regions_for_pdf(
     dpi: int = 150,
     quality: int = 95,
     skip_empty: bool = False,
-) -> List[Path]:
+) -> List[RegionCrop]:
     """
     Functional wrapper that renders the PDF then crops according
     to anchors, returning all cropped files.
     """
     cutter = PdfCutter(dpi=dpi, quality=quality)
-    return cutter.crop_regions_for_pdf(pdf_path=pdf_path, anchors=anchors,
-                                       out_dir=out_dir, skip_empty=skip_empty)
+    return cutter.crop_regions_for_pdf(
+        pdf_path=pdf_path,
+        anchors=anchors,
+        out_dir=out_dir,
+        skip_empty=skip_empty,
+    )

@@ -29,6 +29,7 @@ class Anchor(BaseModel):
 class Region(BaseModel):
     """Vertical region of interest (horizontal band between two Y coordinates)."""
 
+    qnum: int = Field(..., ge=0, description="Question number associated with this region.")
     y_start_mm: float = Field(..., ge=0, description="Lower bound (inclusive) in mm.")
     y_end_mm: float = Field(..., ge=0, description="Upper bound (inclusive) in mm.")
 
@@ -63,6 +64,20 @@ class Anchors(BaseModel):
     def json_pretty(self) -> str:
         """Convenience pretty JSON."""
         return json.dumps(self.model_dump(), ensure_ascii=False, indent=2)
+
+
+def load_anchors(path: Path) -> Anchors:
+    """
+    Load anchors from a JSON file produced by :func:`extract_anchors`.
+    """
+    return Anchors.model_validate_json(path.read_text(encoding="utf-8"))
+
+
+def save_anchors(anchors: Anchors, path: Path) -> None:
+    """
+    Persist anchors to disk as pretty-printed JSON.
+    """
+    path.write_text(anchors.json_pretty(), encoding="utf-8")
 
 
 def _anchors_for_page(
@@ -119,21 +134,21 @@ def _regions_from_anchors(
         return regions
 
     for j in range(len(anchors_mm) - 1):
-        y_top = anchors_mm[j][1]
-        y_bottom = anchors_mm[j + 1][1]
+        _, y_top, qnum = anchors_mm[j]
+        _, y_bottom, _ = anchors_mm[j + 1]
 
         y_start = max(0.0, y_bottom - overlap_mm)
         y_end = min(page_h_mm, y_top + overlap_mm)
 
         if y_end - y_start > 0.1:
-            regions.append({"y_start_mm": y_start, "y_end_mm": y_end})
+            regions.append({"qnum": qnum, "y_start_mm": y_start, "y_end_mm": y_end})
 
     if include_bottom_segment:
-        y_last = anchors_mm[-1][1]
+        _, y_last, q_last = anchors_mm[-1]
         y_start = 0.0
         y_end = min(page_h_mm, y_last + overlap_mm)
         if y_end - y_start > 0.1:
-            regions.append({"y_start_mm": y_start, "y_end_mm": y_end})
+            regions.append({"qnum": q_last, "y_start_mm": y_start, "y_end_mm": y_end})
 
     return regions
 

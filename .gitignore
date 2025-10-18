@@ -6,3 +6,5 @@ venv/
 *.out
 *:Zone.Identifier
 __pycache__/
+analysis/
+anchors.json

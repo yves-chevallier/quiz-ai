@@ -1,50 +1,47 @@
-from pathlib import Path
+"""
+Generic utility helpers shared across the CLI commands.
+"""
+
+from __future__ import annotations
+
 import json
-import io
-import base64
-from typing import Any, List
-from PIL import Image
-from pdf2image import convert_from_path
+from pathlib import Path
+from typing import Any
 
-from sandbox.pipeline import OUT_DIR
+import yaml
 
-# ---------- OUTILS FICHIERS ----------
-def ensure_out_dir(path: Path = OUT_DIR) -> None:
+
+def ensure_directory(path: Path) -> Path:
+    """
+    Create `path` (and parents) if it does not exist and return it for convenience.
+    """
     path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
-def save_json(path: Path, data: Any) -> None:
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def load_json(path: Path) -> Any:
+def read_json(path: Path) -> Any:
+    """
+    Read a JSON file with UTF-8 encoding.
+    """
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def pil_image_to_jpeg_data_url(
-    img: Image.Image, max_side: int = 1600, quality: int = 65
-) -> str:
-    if img.mode != "RGB":
-        img = img.convert("RGB")
-    w, h = img.size
-    scale = max(w, h) / float(max_side)
-    if scale > 1.0:
-        img = img.resize((int(w / scale), int(h / scale)), Image.LANCZOS)
-    buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=quality, optimize=True, progressive=True)
-    b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-    return f"data:image/jpeg;base64,{b64}"
+def write_json(path: Path, data: Any) -> None:
+    """
+    Write JSON content with UTF-8 encoding and pretty indentation.
+    """
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-# ---------- OUTILS IMAGES ----------
-def pil_image_to_data_url(img: Image.Image) -> str:
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-    return f"data:image/png;base64,{b64}"
+def read_yaml(path: Path) -> Any:
+    """
+    Read YAML data from `path` using yaml.safe_load.
+    """
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
-def pdf_to_pil_images_in_memory(
-    pdf_path: Path, dpi: int = DPI_IMAGES
-) -> List[Image.Image]:
-    return convert_from_path(str(pdf_path), dpi=dpi)
+def write_text(path: Path, content: str) -> None:
+    """
+    Convenience wrapper to write UTF-8 text.
+    """
+    path.write_text(content, encoding="utf-8")
