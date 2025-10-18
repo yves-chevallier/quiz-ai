@@ -4,12 +4,19 @@ Typer command-line interface exposing the Quiz AI pipeline.
 
 from __future__ import annotations
 
+import json
+from collections import deque
 from pathlib import Path
-from typing import Annotated, List, Optional
+from typing import Annotated, Any, Deque, Dict, List, Optional
 
 import typer
 
-from .analysis import PROMPT_PATH, load_or_extract_anchors, run_analysis
+from .analysis import (
+    PROMPT_PATH,
+    analysis_output_schema,
+    load_or_extract_anchors,
+    run_analysis,
+)
 from .anchors import extract_anchors, save_anchors
 from .grading import Solution, compute_points_from_grades, load_solution, run_grading
 from .latex import write_latex_from_yaml
@@ -19,11 +26,348 @@ from .utils import ensure_directory, read_json, write_json
 from .annotate import annotate_pdf
 from .anchors import load_anchors
 
+from rich import box
+from rich.console import Console, Group
+from rich.live import Live
+from rich.panel import Panel
+from rich.progress_bar import ProgressBar
+from rich.table import Table
+from rich.text import Text
+
+try:
+    from typer.rich_utils import console as typer_console
+except ImportError:  # pragma: no cover - fallback for older Typer versions
+    typer_console = Console()
+
 
 app = typer.Typer(
     help="Outils CLI pour la conversion, l'analyse et la notation de quiz scannés.",
     no_args_is_help=True,
 )
+
+
+def _format_duration(seconds: float) -> str:
+    """Turn a duration in seconds into a short human-readable string."""
+    if seconds < 1.0:
+        return f"{seconds:.2f}s"
+    total_seconds = int(seconds)
+    millis = seconds - total_seconds
+    minutes, secs = divmod(total_seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}h{minutes:02d}m{secs:02d}s"
+    if minutes:
+        return f"{minutes}m{secs:02d}s"
+    if millis >= 0.05:
+        return f"{seconds:.2f}s"
+    return f"{secs}s"
+
+
+class RichAnalysisProgress:
+    """Rich-powered progress rendering for the analysis pipeline."""
+
+    def __init__(
+        self,
+        *,
+        console: Optional[Console] = None,
+        history_size: int = 6,
+    ) -> None:
+        self.console = console or Console()
+        self.state: Dict[str, Any] = {
+            "total_expected": 0,
+            "pages_with_regions": 0,
+            "total_pages": None,
+            "questions_processed": 0,
+            "questions_total": 0,
+            "current_page": None,
+            "current_page_regions": 0,
+            "current_page_questions": 0,
+            "current_question_id": None,
+            "current_question_kind": "",
+            "current_question_summary": "",
+            "current_question_position": 0,
+            "current_question_total": 0,
+            "current_question_tokens": {"input": 0, "output": 0, "total": 0},
+            "overall_tokens": {"input": 0, "output": 0, "total": 0},
+        }
+        self._messages: Deque[Text] = deque(maxlen=history_size)
+        self._live: Optional[Live] = None
+        self._pages_seen: set[int] = set()
+
+    def __enter__(self) -> "RichAnalysisProgress":
+        self._live = Live(
+            self._render(),
+            console=self.console,
+            refresh_per_second=6,
+        )
+        self._live.__enter__()
+        self._log("Analyse initialisée. CTRL+C pour interrompre.", style="bold cyan")
+        self._refresh()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        if exc_type is KeyboardInterrupt:
+            self._log("Interruption utilisateur détectée.", style="bold yellow")
+            self._refresh()
+        if self._live:
+            self._live.__exit__(exc_type, exc, tb)
+            self._live = None
+
+    def __call__(self, event: str, payload: Dict[str, Any]) -> None:
+        self._handle_event(event, payload or {})
+        self._refresh()
+
+    # Event handling -----------------------------------------------------------------
+    def _handle_event(self, event: str, payload: Dict[str, Any]) -> None:
+        if event == "run:init":
+            self.state["total_expected"] = int(payload.get("total_regions_expected") or 0)
+            self.state["pages_with_regions"] = int(payload.get("pages_with_regions") or 0)
+            self._log(
+                f"{self.state['total_expected']} zone(s) attendues sur "
+                f"{self.state['pages_with_regions']} page(s) ancrées.",
+                style="cyan",
+            )
+            return
+
+        if event == "run:pages_ready":
+            total_pages = payload.get("total_pages")
+            if isinstance(total_pages, int):
+                self.state["total_pages"] = total_pages
+            self._log(f"PDF rasterisé → {total_pages} page(s).", style="cyan")
+            return
+
+        if event == "page:start":
+            page_number = payload.get("page_number")
+            self.state["current_page"] = page_number
+            self.state["current_page_regions"] = 0
+            self.state["current_page_questions"] = 0
+            self._log(f"Page {page_number} : préparation.", style="magenta")
+            return
+
+        if event == "page:rendered":
+            image_path = payload.get("image_path")
+            filename = Path(image_path).name if image_path else "image"
+            self._log(f"Page rendue → {filename}", style="magenta")
+            return
+
+        if event == "page:regions":
+            count = int(payload.get("count", 0))
+            self.state["current_page_regions"] = count
+            self._log(f"Régions détectées : {count}", style="magenta")
+            return
+
+        if event == "page:crops-ready":
+            count = int(payload.get("count", 0))
+            self.state["current_page_regions"] = count
+            self._log(f"Rognage terminé : {count} zone(s).", style="magenta")
+            return
+
+        if event == "page:skip":
+            reason = payload.get("reason") or "motif inconnu"
+            mapping = {
+                "no-anchors": "aucune ancre correspondante",
+                "no-regions": "aucune région définie",
+                "invalid-page-height": "hauteur de page invalide",
+            }
+            detail = mapping.get(reason, reason)
+            self._log(f"Page ignorée ({detail}).", style="yellow")
+            return
+
+        if event == "page:process":
+            count = int(payload.get("question_count", 0))
+            self.state["current_page_questions"] = count
+            self._log(f"Traitement des {count} zone(s) détectées.", style="magenta")
+            return
+
+        if event == "question:start":
+            question_id = payload.get("question_id")
+            position = int(payload.get("position", 0))
+            total = int(payload.get("total", 0))
+            kind = payload.get("question_kind") or ""
+            self.state["current_question_id"] = question_id
+            self.state["current_question_kind"] = kind
+            self.state["current_question_position"] = position
+            self.state["current_question_total"] = total
+            if total:
+                self.state["questions_total"] = max(self.state["questions_total"], total)
+            self._log(f"Question {question_id} [{position}/{total}] en cours.", style="green")
+            return
+
+        if event == "question:request":
+            self._log("  ↳ Requête envoyée au modèle…", style="green")
+            return
+
+        if event == "question:result":
+            question_id = payload.get("question_id")
+            self.state["current_question_id"] = question_id
+            kind = payload.get("question_kind") or ""
+            summary = payload.get("summary") or ""
+            position = int(payload.get("position", 0))
+            total = int(payload.get("total", 0))
+            usage = payload.get("usage") or {}
+            in_tokens = int(usage.get("input_tokens") or 0)
+            out_tokens = int(usage.get("output_tokens") or 0)
+            total_tokens = int(usage.get("total_tokens") or (in_tokens + out_tokens))
+
+            self.state["current_question_kind"] = kind
+            self.state["current_question_summary"] = summary
+            self.state["current_question_position"] = position
+            self.state["current_question_total"] = total
+            self.state["current_question_tokens"] = {
+                "input": in_tokens,
+                "output": out_tokens,
+                "total": total_tokens,
+            }
+            self.state["questions_processed"] = position
+            self.state["questions_total"] = max(self.state["questions_total"], total)
+
+            self.state["overall_tokens"]["input"] += in_tokens
+            self.state["overall_tokens"]["output"] += out_tokens
+            self.state["overall_tokens"]["total"] += total_tokens
+
+            page_number = payload.get("page_number")
+            if isinstance(page_number, int):
+                self._pages_seen.add(page_number)
+
+            self._log(
+                f"  ↳ Réponse reçue : {kind or 'question'} | {summary}",
+                style="green",
+            )
+            self._log(
+                f"    Jetons {total_tokens} (in {in_tokens}, out {out_tokens})",
+                style="dim",
+            )
+            return
+
+        if event == "run:complete":
+            self._log("Analyse terminée.", style="bold green")
+            return
+
+        # Unknown events fallback
+        self._log(f"{event} → {payload}", style="dim")
+
+    # Rendering ---------------------------------------------------------------------
+    def _render(self):
+        summary_table = Table.grid(padding=(0, 1))
+        summary_table.add_column(style="cyan", justify="right")
+        summary_table.add_column()
+        summary_table.add_column(justify="left")
+
+        processed = self.state["questions_processed"]
+        expected = self.state["total_expected"] or self.state["questions_total"] or "-"
+        summary_table.add_row(
+            "Questions",
+            f"{processed}/{expected}",
+            self._progress_bar(completed=processed, total=expected),
+        )
+
+        total_pages = self.state["total_pages"] or "-"
+        pages_seen = len(self._pages_seen)
+        summary_table.add_row(
+            "Pages",
+            f"{pages_seen}/{total_pages} (avec régions {self.state['pages_with_regions']})",
+            self._progress_bar(completed=pages_seen, total=total_pages),
+        )
+
+        overall_tokens = self.state["overall_tokens"]
+        summary_table.add_row(
+            "Jetons",
+            f"{overall_tokens['total']} (in {overall_tokens['input']}, out {overall_tokens['output']})",
+            Text("—", style="dim"),
+        )
+
+        summary_panel = Panel(
+            summary_table,
+            title="Progression",
+            border_style="cyan",
+            box=box.ROUNDED,
+        )
+
+        details_table = Table.grid(padding=(0, 1))
+        details_table.add_column(style="magenta", justify="right")
+        details_table.add_column()
+
+        if self.state["current_page"] is None:
+            page_value = "-"
+        else:
+            page_value = (
+                f"Page {self.state['current_page']} • "
+                f"{self.state['current_page_regions']} zone(s) détectées"
+            )
+            if self.state["current_page_questions"]:
+                page_value += f" • {self.state['current_page_questions']} en traitement"
+        details_table.add_row("Page actuelle", page_value)
+
+        question_id = self.state["current_question_id"]
+        if question_id is None:
+            question_value = "-"
+        else:
+            total = self.state["current_question_total"] or self.state["questions_total"] or "-"
+            kind = self.state["current_question_kind"] or "type inconnu"
+            question_value = f"Q{question_id} ({kind}) • {self.state['current_question_position']}/{total}"
+        details_table.add_row("Question en cours", question_value)
+
+        summary_text = self.state["current_question_summary"] or "En attente de réponse…"
+        details_table.add_row("Résumé", summary_text)
+
+        tokens = self.state["current_question_tokens"]
+        details_table.add_row(
+            "Jetons (dernier)",
+            f"{tokens['total']} (in {tokens['input']}, out {tokens['output']})",
+        )
+
+        details_panel = Panel(
+            details_table,
+            title="Contexte",
+            border_style="magenta",
+            box=box.ROUNDED,
+        )
+
+        if self._messages:
+            messages_renderable = Group(*self._messages)
+        else:
+            messages_renderable = Text("En attente d'événements…", style="dim")
+
+        log_panel = Panel(
+            messages_renderable,
+            title="Journal",
+            border_style="green",
+            box=box.ROUNDED,
+        )
+
+        layout = Table.grid(expand=True)
+        layout.add_column(ratio=2)
+        layout.add_column(ratio=1)
+        layout.add_row(Group(summary_panel, details_panel), log_panel)
+        return layout
+
+    # Helpers -----------------------------------------------------------------------
+    @staticmethod
+    def _placeholder() -> Text:
+        return Text("—", style="dim")
+
+    @staticmethod
+    def _progress_bar(completed: Any, total: Any, *, width: int = 24):
+        try:
+            total_val = int(total)
+            completed_val = int(completed)
+        except (TypeError, ValueError):
+            return RichAnalysisProgress._placeholder()
+
+        if total_val <= 0:
+            return RichAnalysisProgress._placeholder()
+
+        total_val = max(total_val, 1)
+        completed_val = max(0, min(completed_val, total_val))
+        return ProgressBar(total=total_val, completed=completed_val, width=width)
+
+    def _log(self, message: str, *, style: str = "") -> None:
+        text = Text(f"• {message}", style=style)
+        self._messages.append(text)
+
+    def _refresh(self) -> None:
+        if self._live:
+            self._live.update(self._render())
 
 
 @app.command()
@@ -52,9 +396,9 @@ def anchors(
         typer.Argument(help="PDF source contenant les ancres hyperref.", exists=True, readable=True),
     ],
     output: Annotated[
-        Path,
+        Optional[Path],
         typer.Option("-o", "--output", help="Fichier JSON de sortie.", dir_okay=False),
-    ] = Path("anchors.json"),
+    ] = None,
     overlap: Annotated[
         float,
         typer.Option(
@@ -81,16 +425,22 @@ def anchors(
         anchor_pattern=pattern,
         include_bottom_segment=include_bottom,
     )
-    save_anchors(anchors_model, output)
-    typer.echo(f"Ancres sauvegardées → {output}")
+    if output:
+        save_anchors(anchors_model, output)
+        typer.echo(f"Ancres sauvegardées → {output}")
+    else:
+        typer.echo(anchors_model.json_pretty())
 
 
 @app.command()
 def analysis(
     responses_pdf: Annotated[
-        Path,
-        typer.Argument(help="PDF des copies scannées à analyser.", exists=True, readable=True),
-    ],
+        Optional[Path],
+        typer.Argument(
+            help="PDF des copies scannées à analyser.",
+            metavar="RESPONSES_PDF",
+        ),
+    ] = None,
     output: Annotated[
         Path,
         typer.Option("-o", "--output", help="Dossier de sortie pour l'analyse."),
@@ -115,10 +465,27 @@ def analysis(
         Optional[Path],
         typer.Option("--prompt", help="Prompt Markdown personnalisé pour l'analyse.", exists=True, readable=True),
     ] = None,
+    json_schema: Annotated[
+        bool,
+        typer.Option(
+            "--json-schema",
+            help="Afficher le schéma JSON de sortie et quitter.",
+            is_flag=True,
+        ),
+    ] = False,
 ) -> None:
     """
     Lancer l'analyse des copies PDF question par question.
     """
+    if json_schema:
+        typer.echo(json.dumps(analysis_output_schema(), ensure_ascii=False, indent=2))
+        raise typer.Exit()
+
+    if responses_pdf is None:
+        raise typer.BadParameter("Aucun PDF fourni. Spécifiez RESPONSES_PDF ou utilisez --json-schema.")
+    if not responses_pdf.exists() or not responses_pdf.is_file():
+        raise typer.BadParameter(f"PDF introuvable ou illisible: {responses_pdf}")
+
     out_dir = ensure_directory(output)
     try:
         anchors_model = load_or_extract_anchors(
@@ -127,17 +494,81 @@ def analysis(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+
     client = build_openai_client()
-    items = run_analysis(
-        responses_pdf=responses_pdf,
-        anchors=anchors_model,
-        output_dir=out_dir,
-        client=client,
-        model=model,
-        dpi=dpi,
-        prompt_path=prompt_path or PROMPT_PATH,
+    analysis_path = out_dir / "analysis.json"
+    console = typer_console
+    progress_reporter = RichAnalysisProgress(console=console)
+
+    try:
+        with progress_reporter:
+            result = run_analysis(
+                responses_pdf=responses_pdf,
+                anchors=anchors_model,
+                output_dir=out_dir,
+                client=client,
+                model=model,
+                dpi=dpi,
+                prompt_path=prompt_path or PROMPT_PATH,
+                progress=progress_reporter,
+            )
+    except KeyboardInterrupt as exc:
+        console.print(
+            "\n[bold yellow]Analyse interrompue par l'utilisateur. Résultats partiels sauvegardés.[/]"
+        )
+        console.print(f"[bold]Fichier JSON[/bold] : {analysis_path}")
+        raise typer.Exit(code=1) from exc
+
+    question_range = "N/A"
+    if result.question_ids:
+        first = result.question_ids[0]
+        last = result.question_ids[-1]
+        question_range = f"{first}..{last}" if first != last else str(first)
+
+    missing_display = "aucune"
+    if result.missing_question_ids:
+        missing_display = ", ".join(str(q) for q in result.missing_question_ids)
+
+    ambiguous_display = "aucune"
+    if result.ambiguous_question_ids:
+        ambiguous_display = ", ".join(str(q) for q in result.ambiguous_question_ids)
+
+    usage = result.usage
+    duration_text = _format_duration(result.elapsed_seconds)
+
+    summary_table = Table(
+        title="Synthèse",
+        box=box.SIMPLE_HEAVY,
+        show_edge=True,
+        expand=True,
     )
-    typer.echo(f"{len(items)} zones analysées. Résultat → {out_dir / 'analysis.json'}")
+    summary_table.add_column("Indicateur", style="cyan", no_wrap=True)
+    summary_table.add_column("Valeur", justify="right")
+
+    summary_table.add_row(
+        "Pages analysées",
+        f"{result.pages_processed}/{result.total_pages} (dont {result.pages_with_regions} avec régions)",
+        RichAnalysisProgress._progress_bar(result.pages_processed, result.total_pages),
+    )
+    summary_table.add_row(
+        "Questions traitées",
+        f"{result.questions_processed} (plage {question_range})",
+        RichAnalysisProgress._progress_bar(
+            result.questions_processed, result.total_regions_expected or result.questions_processed
+        ),
+    )
+    summary_table.add_row("Questions manquantes", missing_display, RichAnalysisProgress._placeholder())
+    summary_table.add_row("Ambiguïtés", ambiguous_display, RichAnalysisProgress._placeholder())
+    summary_table.add_row(
+        "Jetons consommés",
+        f"{usage.total_tokens} (entrée {usage.input_tokens} / sortie {usage.output_tokens})",
+        RichAnalysisProgress._placeholder(),
+    )
+    summary_table.add_row("Durée totale", duration_text, RichAnalysisProgress._placeholder())
+
+    console.print()
+    console.print(summary_table)
+    console.print(f"[bold green]Fichier JSON[/bold green] : {analysis_path}")
 
 
 @app.command("grade-one")
