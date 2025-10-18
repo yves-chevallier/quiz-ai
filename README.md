@@ -41,33 +41,6 @@ Because each stage produces artifacts on disk, you can re-run only the stages th
 - **ReportLab, SVGLib**: Generate annotated PDFs and vector overlays for feedback.
 - **Pydantic, PyYAML**: Validate structured data exchanged between stages.
 
-## CLI Usage
-
-All functionality is available through the `quiz-ai` CLI (installed via Poetry or pip). Typical workflow:
-
-```bash
-# 1. Convert quiz from YAML to LaTeX
-quizai latex quiz.yaml -o quiz.tex
-
-# 2. Compile LaTeX to PDF (external tool)
-latexmk -lualatex quiz.tex
-
-# 3. Extract anchors from the source PDF
-quizai anchors quiz.pdf -o anchors.json
-
-# 4. Analyse scanned responses using anchors (preferred) or the source PDF
-quizai analysis responses.pdf -a anchors.json -o responses/
-quizai analysis responses.pdf -i quiz.pdf -o responses/
-
-# 5. Grade a single student or a batch
-quizai grade-one responses/alice.json -q quiz.yaml -o grade_alice.json
-quizai grade responses.pdf -q quiz.yaml -a anchors.json --report report.md --annotate=true
-
-# 6. Generate consolidated reports or annotated PDFs
-quizai report grade_alice.json grade_bob.json -o report.md
-quizai annotate responses.pdf grade_batch.json -o annotated_responses.pdf
-```
-
 ### Tips for Running the Pipeline
 
 - Version the YAML quiz definition, LaTeX output, and anchor files together to guarantee reproducibility.
@@ -79,3 +52,73 @@ quizai annotate responses.pdf grade_batch.json -o annotated_responses.pdf
 - **Faster turnaround**: Reduce manual marking time by letting LLMs perform first-pass grading while keeping humans in the loop for final approval.
 - **Consistent grading**: The rubric lives in source control, so scoring logic does not drift between cohorts.
 - **Extensible foundation**: Each stage is modular, making it straightforward to swap LLM providers, change report formats, or add domain-specific checks.
+
+## Demo
+
+### Extracting Anchors
+
+```bash
+$ quiz-ai anchors demo/exam/exam.pdf > out/anchors.json
+```
+
+### Analyzing a Student's Scan
+
+```bash
+$ quiz-ai analysis -a out/anchors.json demo/quiz-bernard-foulpaz.pdf
+```
+
+![Analysis output](demo/analysis.png)
+
+### Grading a Student's Responses
+
+```bash
+$ quiz-ai grading analysis/analysis.json demo/exam.yml -o analysis
+Grading saved → analysis/grading.json (10.50/20.00 pts, 52.5 %)
+```
+
+Go and see by yourself the [grading.json](out/grading.json) file generated for this student.
+
+### Generating Personalized Feedback
+
+```bash
+$ quiz-ai feedback out/grading.json
+Bonjour Bernard Foulpaz,
+
+Bravo pour vos résultats au Quiz Python. Votre note calculée est de 4.08
+(12.33/20, soit 61.65 %). Je tiens à souligner vos réussites: bonne
+compréhension des itérateurs (__iter__/next), des effets de référence
+sur les listes (append), des compréhensions de listes simples, des paramètres
+nommés et de la méthode spéciale __init__. Vous avez également bien mené un
+petit programme de calculatrice en ligne de commande, prévu correctement la
+sortie de "12314231423225".split("3"), importé sqrt sans polluer l’espace de
+noms, et expliqué avec justesse le typage dynamique.
+
+Pour continuer à progresser, consolidez les notions factuelles et de
+vocabulaire: la signification de BDFL et de REPL, le rôle exact de pip et
+l’usage de virtualenv/venv. Renforcez aussi les conventions objet: la définition
+de self, la distinction entre noms d’actions (méthodes) et variables d’état
+(attributs), et associez chaque syntaxe Python à son type. Un bon plan
+d’entraînement est de créer une petite classe en nommant clairement méthodes et
+attributs, d’écrire un itérateur simple et de manipuler next, puis de monter un
+environnement virtuel pour installer un paquet avec pip. Des fiches mémo sur les
+sigles et une relecture du tutoriel officiel vous aideront à ancrer ces bases.
+
+Dernier point méthodologique: à l’examen, marquez une seule bulle par question
+avec une coche nette, sans cercles ambigus ni soulignements.
+
+Poursuivez sur cette lancée: les fondamentaux se renforcent vite avec un
+entraînement ciblé. Courage, vous êtes sur la bonne trajectoire.
+
+L'assistant artificiel de votre professeur
+
+```
+
+```bash
+$ quiz-ai annotate -g out/grading.json demo/quiz-bernard-foulpaz.pdf \
+                   -a out/anchors.json out/quiz-bernard-foulpaz-annotated.pdf
+Annotated PDF generated → out/quiz-bernard-foulpaz-annotated.pdf
+```
+
+![Page 1](demo/feedback-page-1.png)
+
+![Page 2](demo/feedback-page-2.png)

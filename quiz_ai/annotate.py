@@ -6,6 +6,7 @@ import contextlib
 import io
 import logging
 import re
+import urllib.parse
 import urllib.request
 import zipfile
 from dataclasses import dataclass
@@ -42,9 +43,14 @@ FONT_HAND_FILENAME = "IndieFlower-Regular.ttf"
 FONT_HAND_PATH = FONT_STORAGE_DIR / FONT_HAND_FILENAME
 FontSource = Tuple[str, Optional[str]]
 FONT_HAND_REMOTE_SOURCES: Tuple[FontSource, ...] = (
+    ("https://fonts.cdnfonts.com/s/16010/IndieFlower-Regular.ttf", None),
     ("https://fonts.google.com/download?family=Indie%20Flower", FONT_HAND_FILENAME),
     ("https://raw.githubusercontent.com/google/fonts/main/ofl/indieflower/IndieFlower-Regular.ttf", None),
 )
+FONT_HAND_STYLESHEETS: Tuple[str, ...] = (
+    "https://fonts.cdnfonts.com/css/indie-flower",
+)
+PREFERRED_FONT_EXTENSIONS: Tuple[str, ...] = (".ttf", ".otf")
 
 # Geometry/appearance constants
 PT_TO_MM = 25.4 / 72.0
@@ -240,9 +246,49 @@ def _download_font_from_zip(url: str, member: str, destination: Path) -> bool:
     return _write_bytes(destination, font_bytes)
 
 
+def _download_font_from_stylesheets(
+    urls: Iterable[str],
+    destination: Path,
+    *,
+    preferred_extensions: Tuple[str, ...] = PREFERRED_FONT_EXTENSIONS,
+) -> bool:
+    """Fetch a stylesheet and download the first matching font asset."""
+    for sheet_url in urls:
+        css_bytes = _download_bytes(sheet_url)
+        if css_bytes is None:
+            continue
+        try:
+            css_text = css_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            css_text = css_bytes.decode("latin-1", errors="ignore")
+
+        raw_urls = re.findall(r"url\(([^)]+)\)", css_text)
+        candidates: List[Tuple[str, str]] = []
+        for raw in raw_urls:
+            cleaned = raw.strip().strip('\'"')
+            if not cleaned:
+                continue
+            absolute = urllib.parse.urljoin(sheet_url, cleaned)
+            parsed = urllib.parse.urlparse(absolute)
+            ext = Path(parsed.path).suffix.lower()
+            if not ext:
+                continue
+            candidates.append((ext, absolute))
+
+        for ext in preferred_extensions:
+            for candidate_ext, candidate_url in candidates:
+                if candidate_ext == ext and _download_file(candidate_url, destination):
+                    return True
+
+    return False
+
+
 def _ensure_font_cached(font_path: Path, sources: Iterable[FontSource]) -> Path:
     """Ensure the handwriting font is available locally."""
     if font_path.exists() and font_path.stat().st_size > 0:
+        return font_path
+
+    if _download_font_from_stylesheets(FONT_HAND_STYLESHEETS, font_path):
         return font_path
 
     for url, member in sources:
