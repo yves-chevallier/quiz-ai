@@ -1,0 +1,320 @@
+{
+  "student": {
+    "name": "",
+    "identifier": "",
+    "date": "2025-10-18"
+  },
+  "quiz": {
+    "title": "Quiz Python",
+    "source_reference": "Quiz Python (QZ-01)",
+    "total_questions": 20
+  },
+  "questions": [
+    {
+      "id": 1,
+      "label": "Signification de BDFL",
+      "max_points": 1.0,
+      "awarded_ratio": 0.0,
+      "awarded_points": 0.0,
+      "status": "incorrect",
+      "answer_summary": "Cercle rempli/griffonné sur « Best Data Format Language »",
+      "justification": "La solution officielle est « Benevolent Dictator For Life ». L’unique marque visible sélectionne « Best Data Format Language » (incorrect).",
+      "remarks": "Revoir les sigles historiques liés à Python (BDFL).",
+      "flags": [],
+      "confidence": "high"
+    },
+    {
+      "id": 2,
+      "label": "Signification de REPL",
+      "max_points": 1.0,
+      "awarded_ratio": 0.0,
+      "awarded_points": 0.0,
+      "status": "incorrect",
+      "answer_summary": "Croix sur l’option 2 et gribouillage ambigu sur l’option 4",
+      "justification": "La réponse attendue est « Read-Eval-Print Loop » (option 3). Des marques apparaissent sur 2 et 4, aucune sur 3.",
+      "remarks": "Cochez clairement une seule option. Revoir la définition de REPL.",
+      "flags": [
+        "Marquage ambigu sur l’option 4",
+        "Plusieurs options marquées pour une question à choix unique"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": 3,
+      "label": "Programme pour calculatrice en ligne de commande",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "Coche sur « ipython »",
+      "justification": "La solution officielle est « ipython ». La coche bleue correspond à ce choix.",
+      "remarks": "",
+      "flags": [],
+      "confidence": "high"
+    },
+    {
+      "id": 4,
+      "label": "Associer chaque syntaxe Python à son type",
+      "max_points": 0.0,
+      "awarded_ratio": 0.83,
+      "awarded_points": 0.0,
+      "status": "partial",
+      "answer_summary": "[1]→« liste »; {1}→« set »; {1:2}→« dictionaire »; (1,2)→« tuple »; (i for i in range(3))→« for loop » (barré, aucune autre réponse) ; 'abc'→« chaine » (+ notes: « comprehension » barré; « generateur ! » à droite)",
+      "justification": "Solutions officielles: liste, set, dictionnaire, tuple, générateur, chaîne de caractères. Les items 1,2,3,4,6 sont corrects (orthographe acceptable: « dictionaire »; « chaine »). L’item 5 n’a pas de réponse valide (seule l’inscription « for loop » est biffée). Score: 5/6 ≈ 0.83.",
+      "remarks": "Pour les générateurs, notez explicitement « générateur » sur la ligne correspondante.",
+      "flags": [
+        "Possible débordement inter-éléments: « generateur ! » apparaît près de l’item 'abc', pourrait référer à l’item précédent"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "id": 5,
+      "label": "Sortie de \"12314231423225\".split(\"3\")",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "Soulignement bleu du choix « ['12', '142', '142', '225'] » (aucune marque dans le rond)",
+      "justification": "La bonne réponse est « ['12', '142', '142', '225'] ». Le soulignement unique indique ce choix.",
+      "remarks": "Marquez la bulle pour éviter toute ambiguïté.",
+      "flags": [
+        "Soulignement du texte utilisé à la place du marquage de la bulle"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "id": 6,
+      "label": "Importer sqrt sans polluer l’espace de nom",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "Boucle/anneau bleu ambigu autour de la bulle « from math import sqrt »",
+      "justification": "La bonne réponse est « from math import sqrt ». Le marquage, bien qu’ambigu, cible cette option et aucune autre n’est marquée.",
+      "remarks": "Utilisez une coche claire dans la bulle.",
+      "flags": [
+        "Marquage de bulle ambigu (anneau/slash au lieu d’une coche ou croix)"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "id": 7,
+      "label": "Typage dynamique: signification",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "Croix dans la bulle de « Le type d’une variable est déterminé automatiquement... »",
+      "justification": "La solution officielle correspond à l’option 2. La bulle 2 est marquée.",
+      "remarks": "",
+      "flags": [],
+      "confidence": "high"
+    },
+    {
+      "id": 8,
+      "label": "Méthode spéciale appelée à l’initialisation",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "Texte manuscrit: « ... la methode ... init ... deux underscore devant et derriere »",
+      "justification": "Réponse attendue: __init__. Le texte décrit explicitement init avec deux underscores de part et d’autre, ce qui équivaut à __init__.",
+      "remarks": "Écrivez directement « __init__ » pour plus de clarté.",
+      "flags": [
+        "Orthographe approximative (« specialh ») et absence d’underscores écrits explicitement"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "id": 9,
+      "label": "Deux méthodes spéciales pour itération",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "1: « next » ; 2: « iter »",
+      "justification": "Réponses attendues: __iter__ et __next__ (ou « next »). L’ordre n’est pas strict: les deux éléments fournis sont acceptés.",
+      "remarks": "",
+      "flags": [],
+      "confidence": "high"
+    },
+    {
+      "id": 10,
+      "label": "Noms pour actions et variables d’état d’un objet",
+      "max_points": 1.0,
+      "awarded_ratio": 0.5,
+      "awarded_points": 0.5,
+      "status": "partial",
+      "answer_summary": "1: « attributs » ; 2: écriture biffée à gauche, puis « initance »",
+      "justification": "Attendu: « méthodes » et « attributs » (ordre libre). Un seul terme correct (« attributs »). Score proportionnel: 1/2 = 0.5.",
+      "remarks": "Associez « méthodes » aux actions et « attributs » à l’état.",
+      "flags": [
+        "Texte biffé sur la ligne 2 rendant l’entrée initiale illisible"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "id": 11,
+      "label": "Définition de self",
+      "max_points": 1.0,
+      "awarded_ratio": 0.0,
+      "awarded_points": 0.0,
+      "status": "incorrect",
+      "answer_summary": "Marques sur options 1 (croix + anneau) et 2 (anneau); aucune marque sur l’option 4",
+      "justification": "La bonne réponse est l’option 4 (convention pour référencer l’instance). Les marquages portent sur des options incorrectes.",
+      "remarks": "Ne marquez qu’une seule bulle et privilégiez l’option décrivant la convention d’instance.",
+      "flags": [
+        "Plusieurs options marquées pour une question à choix unique"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": 12,
+      "label": "Contexte d’usage de next",
+      "max_points": 1.0,
+      "awarded_ratio": 0.0,
+      "awarded_points": 0.0,
+      "status": "incorrect",
+      "answer_summary": "Petite marque ambiguë dans la bulle de « Pour arrêter une boucle for »",
+      "justification": "Réponse attendue: « Pour obtenir le prochain élément d’un itérateur ». La marque, même ambiguë, vise l’option 4 qui est incorrecte.",
+      "remarks": "Revoir l’usage de next pour les itérateurs.",
+      "flags": [
+        "Marquage ambigu (X arrondi/boucle) non standard"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": 13,
+      "label": "len(u) pour un dictionnaire",
+      "max_points": 1.0,
+      "awarded_ratio": 0.0,
+      "awarded_points": 0.0,
+      "status": "incorrect",
+      "answer_summary": "Coche sur « 4 »",
+      "justification": "Le dictionnaire a 3 clés, donc len(u) = 3. L’option cochée est « 4 ».",
+      "remarks": "Comptez les clés, pas les valeurs.",
+      "flags": [],
+      "confidence": "high"
+    },
+    {
+      "id": 14,
+      "label": "Effet d’un append sur alias de liste",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "Croix sur « [1, 2, 3, 4] »",
+      "justification": "La bonne réponse est « [1, 2, 3, 4] ». La bulle correspondante est marquée.",
+      "remarks": "",
+      "flags": [],
+      "confidence": "high"
+    },
+    {
+      "id": 15,
+      "label": "Valeur imprimée par foo(5, c=10)",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "« -15 » manuscrit",
+      "justification": "La solution officielle est -15. L’entrée correspond.",
+      "remarks": "",
+      "flags": [],
+      "confidence": "high"
+    },
+    {
+      "id": 16,
+      "label": "Compréhension de liste (carrés pairs)",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "Anneau + barre diagonale sur « [4, 16] »",
+      "justification": "La solution officielle est « [4, 16] ». Le marquage, bien qu’atypique, vise cette option et aucune autre n’est marquée.",
+      "remarks": "Utilisez une coche claire dans la bulle.",
+      "flags": [
+        "Marquage de bulle ambigu (anneau + slash) au lieu d’une coche"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "id": 17,
+      "label": "Rôle du module pip",
+      "max_points": 1.0,
+      "awarded_ratio": 0.0,
+      "awarded_points": 0.0,
+      "status": "incorrect",
+      "answer_summary": "Coche sur « Gérer les dépendances et automatiser la création d’environnements virtuels »",
+      "justification": "La réponse attendue est « Installer des modules Python depuis le terminal ». L’option cochée n’est pas correcte.",
+      "remarks": "Retenez que pip sert à installer des paquets; la gestion d’environnements virtuels relève d’outils comme venv/virtualenv/poetry/uv.",
+      "flags": [],
+      "confidence": "high"
+    },
+    {
+      "id": 18,
+      "label": "Type de **kwargs",
+      "max_points": 1.0,
+      "awarded_ratio": 0.0,
+      "awarded_points": 0.0,
+      "status": "incorrect",
+      "answer_summary": "Anneaux bleus sur « Un dictionnaire » et « Un tuple »",
+      "justification": "La bonne réponse est « Un dictionnaire ». Deux options sont marquées dans une question à choix unique; cela invalide la sélection.",
+      "remarks": "Ne marquez qu’une seule bulle. **kwargs est un dictionnaire.",
+      "flags": [
+        "Plusieurs options marquées pour une question à choix unique"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": 19,
+      "label": "Différence liste vs tuple",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "Petite boucle ambiguë chevauchant la bulle de « Un tuple est immuable, une liste est mutable »",
+      "justification": "La solution officielle est « Un tuple est immuable, une liste est mutable ». Le marquage vise cette option et aucune autre.",
+      "remarks": "Utilisez une coche claire pour éviter toute ambiguïté.",
+      "flags": [
+        "Marquage de bulle ambigu (petite boucle/touche latérale)"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "id": 20,
+      "label": "Intérêt principal des environnements virtuels",
+      "max_points": 1.0,
+      "awarded_ratio": 1.0,
+      "awarded_points": 1.0,
+      "status": "correct",
+      "answer_summary": "Texte manuscrit: « (reponse 2) ... isoler les deps ... »; soulignement et petite boucle près de l’option 1; aucune marque sur la bulle 2",
+      "justification": "La bonne réponse est l’option 2 (« Isoler les dépendances... »). Le commentaire manuscrit mentionne explicitement « reponse 2 » et développe l’argument, malgré un soulignement de l’option 1.",
+      "remarks": "Cochez la bulle de l’option choisie pour lever toute ambiguïté.",
+      "flags": [
+        "Contradiction visuelle: soulignement/trace près de l’option 1 alors que le texte indique « reponse 2 »",
+        "Bulle de l’option correcte non marquée"
+      ],
+      "confidence": "medium"
+    }
+  ],
+  "score": {
+    "points_obtained": 12.33,
+    "points_total": 20.0,
+    "percentage": 61.65,
+    "total_questions": 20
+  },
+  "final_report": "Performance globale moyenne (12.33/20). Points forts: compréhension des itérateurs (__iter__/next), des effets de référence sur les listes (append), des compréhensions de listes simples, des appels de fonction avec paramètres nommés, et identification de __init__. Points à améliorer: connaissances factuelles (BDFL, REPL, rôle exact de pip, self, next, len(dictionnaire)), et rigueur du marquage des réponses (plusieurs options marquées, cercles/boucles ambigus, soulignements sans coche). Recommandations: 1) Réviser les notions de base: sigles/termes (BDFL, REPL), conventions OOP (self, méthodes vs attributs), itérateurs/next, et outils (pip, virtualenv/venv). 2) À l’examen, marquer clairement une seule bulle par question (utiliser une coche nette), éviter les anneaux/traits ambigus et les soulignements, et ne pas marquer plusieurs choix sur une question à choix unique.",
+  "_source_analysis": "analysis/analysis.json",
+  "_source_quiz": "demo/exam.yml",
+  "_points_obtained": 12.33,
+  "_points_total": 20.0,
+  "_analysis_metadata": {
+    "student_name": "",
+    "student_name_confidence": "low",
+    "student_name_raw": "Bernard Foulpaz",
+    "notes": "Handwritten name next to 'Nom :'. Several letters are unclear; surname could read 'Foulpaz' or 'Foulpez'. Keeping student_name empty due to low confidence.",
+    "grading_date": "2025-10-18",
+    "title_page_image": "images/2025-10-16-14-46-25_page1.jpg",
+    "raw_response": "{\n  \"student_name\": \"\",\n  \"student_name_confidence\": \"low\",\n  \"student_name_raw\": \"Bernard Foulpaz\",\n  \"notes\": \"Handwritten name next to 'Nom :'. Several letters are unclear; surname could read 'Foulpaz' or 'Foulpez'. Keeping student_name empty due to low confidence.\"\n}"
+  }
+}
