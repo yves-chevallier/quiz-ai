@@ -12,7 +12,7 @@ import zipfile
 from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
-from typing import Dict, Iterable, List, Literal, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Literal, Optional, Sequence, Tuple, Union
 
 import fitz  # PyMuPDF
 from reportlab import rl_config
@@ -818,3 +818,115 @@ def annotate_pdf(
         doc.save(str(pdf_output))
     finally:
         doc.close()
+
+
+def render_feedback_overlays(
+    anchors: Anchors,
+    feedback: Iterable[Dict[str, object]] | Iterable[Feedback],
+    page_sizes_pt: Sequence[Tuple[float, float]],
+    *,
+    overall_points: Optional[Tuple[float, float]] = None,
+    student_name: Optional[str] = None,
+    font_path: Optional[Path] = None,
+    check_icon: Path = Path("assets/glyphs/check.svg"),
+    cross_icon: Path = Path("assets/glyphs/cross.svg"),
+) -> fitz.Document:
+    """
+    Render annotation overlays as a standalone PDF with one page per input page size.
+    """
+    font_path_resolved = _resolve_font_path(font_path)
+    check_icon = _resolve_asset_path(check_icon)
+    cross_icon = _resolve_asset_path(cross_icon)
+
+    fb_map: Dict[int, Feedback] = {}
+    for f in feedback:
+        if isinstance(f, Feedback):
+            fb_map[f.id] = f
+            continue
+
+        fid_raw = _get_value(f, "id")
+        if fid_raw is None:
+            raise ValueError("Feedback entry is missing required field 'id'.")
+        try:
+            fid = int(fid_raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid feedback id: {fid_raw!r}") from exc
+
+        status = str(_get_value(f, "status") or "").lower()
+        if status not in {"correct", "incorrect", "partial"}:
+            legacy_correct = _get_value(f, "correct")
+            if isinstance(legacy_correct, bool):
+                status = "correct" if legacy_correct else "incorrect"
+            else:
+                status = "unknown"
+
+        awarded_points = _maybe_float(_get_value(f, "awarded_points"))
+        max_points = _maybe_float(_get_value(f, "max_points"))
+        awarded_ratio = _maybe_float(_get_value(f, "awarded_ratio"))
+        flags = _collect_flags(f)
+        comment = _summarise_comment(
+            status=status,
+            comment_text=_get_value(f, "comment"),
+            remarks=_get_value(f, "remarks"),
+            justification=_get_value(f, "justification"),
+            flags=flags,
+        )
+        if status == "correct" and not flags:
+            comment = ""
+
+        fb_map[fid] = Feedback(
+            id=fid,
+            status=status,  # type: ignore[arg-type]
+            comment=comment,
+            awarded_points=awarded_points,
+            max_points=max_points,
+            awarded_ratio=awarded_ratio,
+            flags=flags,
+        )
+
+    doc = fitz.open()
+    pages_by_index = {page.page_index: page for page in anchors.pages}
+
+    for pno, page_size in enumerate(page_sizes_pt):
+        width_pt, height_pt = page_size
+        page = doc.new_page(width=width_pt, height=height_pt)
+        page_w_mm = width_pt * PT_TO_MM
+        page_h_mm = height_pt * PT_TO_MM
+        extra_items: List[OverlayItem] = []
+        if pno == 0 and overall_points:
+            stamp = _grade_stamp_item(page_w_mm, page_h_mm, overall_points)
+            if stamp:
+                extra_items.append(stamp)
+        if pno == 0 and student_name:
+            name_stamp = _student_name_stamp_item(page_w_mm, page_h_mm, student_name)
+            if name_stamp:
+                extra_items.append(name_stamp)
+
+        page_entry = pages_by_index.get(pno)
+        anchors_mm = []
+        if page_entry and page_entry.anchors_mm:
+            anchors_mm = [a.model_dump() for a in page_entry.anchors_mm]
+
+        items = _items_from_anchors_for_page(
+            anchors_mm=anchors_mm,
+            feedback_by_id=fb_map,
+            check_svg=check_icon,
+            cross_svg=cross_icon,
+            page_w_mm=page_w_mm,
+            page_h_mm=page_h_mm,
+        )
+        if extra_items:
+            items = extra_items + items
+        if not items:
+            continue
+
+        overlay_pdf = _overlay_pdf(
+            (width_pt, height_pt),
+            items=items,
+            font_path=font_path_resolved,
+        )
+        ov = fitz.open("pdf", overlay_pdf)
+        page.show_pdf_page(page.rect, ov, 0)
+        ov.close()
+
+    return doc

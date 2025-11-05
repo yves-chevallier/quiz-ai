@@ -5,6 +5,9 @@ Typer command-line interface exposing the Quiz AI pipeline.
 from __future__ import annotations
 
 import json
+import re
+import shutil
+import unicodedata
 from collections import deque
 from pathlib import Path
 from typing import Annotated, Any, Deque, Dict, List, Optional, Set, Tuple
@@ -25,7 +28,7 @@ from .analysis import (
     run_analysis,
 )
 from .anchors import extract_anchors, load_anchors, save_anchors
-from .annotate import annotate_pdf
+from .annotate import annotate_pdf, render_feedback_overlays
 from .feedback import (
     FeedbackInputs,
     build_feedback_inputs,
@@ -36,14 +39,16 @@ from .feedback import (
 )
 from .grading import (
     Solution,
+    DEFAULT_GRADING_MODEL,
     compute_points_from_grades,
     load_solution,
     run_grading,
     solution_points_map,
+    _normalise_question_id,
 )
 from .latex import write_latex_from_yaml
 from .llm import DEFAULT_VISION_MODEL, build_openai_client
-from .roster import RosterError
+from .roster import RosterError, StudentRecord, load_roster
 from .report import (
     GradeSummary,
     build_markdown_report,
@@ -1087,7 +1092,7 @@ def grade_one(
     model: Annotated[
         str,
         typer.Option("--model", help="OpenAI text model to use for grading."),
-    ] = DEFAULT_VISION_MODEL,
+    ] = DEFAULT_GRADING_MODEL,
 ) -> None:
     """
     Convert a single analysis file into grading results using the LLM.
@@ -1403,6 +1408,44 @@ def _question_text_map_from_yaml(path: Path) -> Dict[int, str]:
     return mapping
 
 
+def _normalize_person_name(value: Optional[str]) -> str:
+    if not value:
+        return ""
+    text = unicodedata.normalize("NFKD", str(value))
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
+    text = re.sub(r"[^a-z0-9]+", " ", text.lower())
+    return " ".join(text.split())
+
+
+def _sanitize_filename(value: str) -> str:
+    cleaned = value.strip()
+    cleaned = re.sub(r"[\\/:*?\"<>|]+", "_", cleaned)
+    cleaned = cleaned.strip("_")
+    return cleaned or "student"
+
+
+def _coerce_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return float(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _split_name_guess(full_name: str) -> Tuple[str, str]:
+    tokens = full_name.split()
+    if len(tokens) >= 2:
+        last = tokens[0]
+        first = " ".join(tokens[1:])
+        return last, first
+    if tokens:
+        return tokens[0], ""
+    return "", ""
+
+
 @app.command()
 def annotate(
     pdf_input: Annotated[
@@ -1493,7 +1536,7 @@ def grade(
     model: Annotated[
         str,
         typer.Option("--model", help="OpenAI multimodal model (vision + text)."),
-    ] = DEFAULT_VISION_MODEL,
+    ] = DEFAULT_GRADING_MODEL,
     report_path: Annotated[
         Optional[Path],
         typer.Option("--report", help="Write a Markdown report at this path."),
@@ -1595,3 +1638,314 @@ def grade(
             student_name=student_label,
         )
         typer.echo(f"Annotated PDF generated → {annotated_path}")
+
+
+@app.command()
+def summary(
+    per_student: Annotated[
+        Path,
+        typer.Argument(
+            help="Directory containing per-student outputs (expects subfolders with grading.json).",
+            exists=True,
+            file_okay=False,
+        ),
+    ],
+    quiz_yaml: Annotated[
+        Path,
+        typer.Option(
+            "-q",
+            "--quiz",
+            help="Quiz YAML used for grading.",
+            exists=True,
+            readable=True,
+        ),
+    ],
+    output: Annotated[
+        Path,
+        typer.Option(
+            "-o",
+            "--output",
+            help="Directory where summary artefacts will be written.",
+        ),
+    ] = Path("summary"),
+    roster_path: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--roster",
+            help="Optional CSV/XLSX roster used to order the summary.",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+    anchors_path: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--anchors",
+            help="Anchors JSON file (required to build binder overlays).",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+    binder_pdf: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--binder",
+            help="Original binder PDF (all students, in order) to align overlays.",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+    scans_dir: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--scans",
+            help="Directory containing split student PDFs in binder order (output of `quiz-ai split`).",
+            exists=True,
+            file_okay=False,
+        ),
+    ] = None,
+    template_pdf: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--template",
+            help="Source exam PDF used to determine the number of pages per student (required for binder overlays).",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+) -> None:
+    """
+    Produce grading summaries: Excel scoreboard, annotated PDF exports, and optional binder overlays.
+    """
+    try:
+        from openpyxl import Workbook
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise typer.BadParameter(
+            "Generating the Excel summary requires the 'openpyxl' package. "
+            "Install it with 'pip install openpyxl'."
+        ) from exc
+
+    solution = load_solution(quiz_yaml)
+    question_ids = [qid for qid, _ in solution.iter_questions()]
+    if not question_ids:
+        raise typer.BadParameter("No questions found in the quiz YAML.")
+    points_map = solution_points_map(solution)
+
+    grade_files = sorted(per_student.glob("*/grading.json"))
+    if not grade_files:
+        raise typer.BadParameter(f"No grading.json files found under {per_student}")
+
+    output_dir = ensure_directory(output)
+    annotated_out_dir = ensure_directory(output_dir / "annotated")
+    excel_path = output_dir / "summary.xlsx"
+
+    roster_records: List[StudentRecord] = []
+    if roster_path:
+        try:
+            roster_records = load_roster(roster_path)
+        except RosterError as exc:
+            raise typer.BadParameter(str(exc)) from exc
+
+    grade_entries: List[Dict[str, Any]] = []
+    grade_lookup: Dict[str, Dict[str, Any]] = {}
+    entry_by_stem: Dict[str, Dict[str, Any]] = {}
+
+    for grade_path in grade_files:
+        data = read_json(grade_path)
+        metadata = data.get("_analysis_metadata") or {}
+
+        roster_first = str(metadata.get("student_name_roster_first_name") or "").strip()
+        roster_last = str(metadata.get("student_name_roster_last_name") or "").strip()
+        roster_full = str(metadata.get("student_name_roster") or "").strip()
+
+        resolved_name = _resolve_student_label(data) or roster_full or str(
+            metadata.get("student_name") or ""
+        ).strip()
+        stem = grade_path.parent.name
+
+        score_block = data.get("score") or {}
+        points_obtained = _coerce_float(score_block.get("points_obtained"))
+        points_total = _coerce_float(score_block.get("points_total"))
+        grade_on_six = None
+        if points_obtained is not None and points_total and points_total > 0:
+            grade_on_six = round(((points_obtained / points_total) * 5.0) + 1.0, 2)
+
+        question_scores: Dict[int, Optional[float]] = {}
+        for idx, q in enumerate(data.get("questions", []), start=1):
+            qid = _normalise_question_id(q.get("id"), fallback=idx)
+            max_points = _coerce_float(q.get("max_points")) or points_map.get(qid)
+            awarded_points = _coerce_float(q.get("awarded_points"))
+            if awarded_points is None:
+                ratio = _coerce_float(q.get("awarded_ratio"))
+                if ratio is None:
+                    ratio = _coerce_float(q.get("granted_ratio"))
+                if ratio is not None and max_points is not None:
+                    awarded_points = ratio * float(max_points)
+            question_scores[qid] = awarded_points
+
+        entry = {
+            "path": grade_path,
+            "data": data,
+            "stem": stem,
+            "first_name": roster_first,
+            "last_name": roster_last,
+            "roster_name": roster_full,
+            "resolved_name": resolved_name,
+            "question_scores": question_scores,
+            "points_obtained": points_obtained,
+            "points_total": points_total,
+            "grade_on_six": grade_on_six,
+            "annotated_pdf": grade_path.parent / f"{stem}-annotated.pdf",
+            "used": False,
+        }
+        grade_entries.append(entry)
+        entry_by_stem[stem] = entry
+
+        possible_keys = {
+            _normalize_person_name(roster_full),
+            _normalize_person_name(f"{roster_last} {roster_first}"),
+            _normalize_person_name(f"{roster_first} {roster_last}"),
+            _normalize_person_name(resolved_name),
+            _normalize_person_name(metadata.get("student_name")),
+            _normalize_person_name(metadata.get("student_name_raw")),
+            _normalize_person_name(stem),
+        }
+        for key in possible_keys:
+            if key and key not in grade_lookup:
+                grade_lookup[key] = entry
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Résultats"
+    header = ["Nom", "Prénom", "Nom détecté", "Points obtenus", "Points totaux", "Note/6"]
+    for qid in question_ids:
+        header.append(f"Q{qid:02d}")
+    ws.append(header)
+
+    annotated_index = 1
+
+    def _append_row(last_name: str, first_name: str, detected_name: str, entry_obj: Optional[Dict[str, Any]]) -> None:
+        row: List[Any] = [
+            last_name or "",
+            first_name or "",
+            detected_name or "",
+            entry_obj.get("points_obtained") if entry_obj and entry_obj.get("points_obtained") is not None else None,
+            entry_obj.get("points_total") if entry_obj and entry_obj.get("points_total") is not None else None,
+            entry_obj.get("grade_on_six") if entry_obj and entry_obj.get("grade_on_six") is not None else None,
+        ]
+        for qid in question_ids:
+            value = entry_obj["question_scores"].get(qid) if entry_obj else None
+            row.append(value if value is not None else None)
+        ws.append(row)
+
+    def _copy_annotated(entry_obj: Dict[str, Any], label: str) -> None:
+        source = entry_obj.get("annotated_pdf")
+        if not isinstance(source, Path) or not source.exists():
+            return
+        safe_label = _sanitize_filename(label)
+        dest = annotated_out_dir / f"{safe_label}.pdf"
+        shutil.copy2(source, dest)
+
+    if roster_records:
+        for idx, record in enumerate(roster_records, start=1):
+            key = _normalize_person_name(record.display_name())
+            entry = grade_lookup.get(key)
+            detected = entry.get("resolved_name", "") if entry else ""
+            _append_row(record.last_name or "", record.first_name or "", detected, entry)
+            if entry:
+                entry["used"] = True
+                label = f"{idx:02d} - {record.last_name} {record.first_name}".strip()
+                _copy_annotated(entry, label or f"{idx:02d}-etudiant")
+            annotated_index = idx + 1
+
+    for entry in grade_entries:
+        if entry.get("used"):
+            continue
+        detected_name = entry.get("resolved_name") or entry.get("roster_name") or entry["stem"]
+        last_name = entry.get("last_name") or ""
+        first_name = entry.get("first_name") or ""
+        if not last_name and not first_name:
+            last_name, first_name = _split_name_guess(detected_name)
+        _append_row(last_name, first_name, detected_name, entry)
+        label = f"{annotated_index:02d} - {last_name} {first_name}".strip()
+        _copy_annotated(entry, label or f"{annotated_index:02d}-etudiant")
+        annotated_index += 1
+
+    wb.save(excel_path)
+    typer.echo(f"Excel summary written → {excel_path}")
+    typer.echo(f"Annotated PDFs copied to → {annotated_out_dir}")
+
+    if anchors_path and binder_pdf and template_pdf and scans_dir:
+        import fitz  # Lazy import; required only when producing overlays
+
+        anchors_model = load_anchors(anchors_path)
+        try:
+            template_doc = fitz.open(template_pdf)
+            pages_per_student = template_doc.page_count
+        finally:
+            template_doc.close()
+
+        scan_paths = sorted(scans_dir.glob("*.pdf"))
+        if not scan_paths:
+            typer.echo(f"[yellow]Warning:[/] no split PDFs found in {scans_dir}, skipping binder overlay.")
+        else:
+            binder_doc = fitz.open(binder_pdf)
+            expected_pages = pages_per_student * len(scan_paths)
+            if binder_doc.page_count < expected_pages:
+                typer.echo(
+                    f"[yellow]Warning:[/] binder has {binder_doc.page_count} page(s) but expected at least {expected_pages}."
+                )
+            aggregate_doc = fitz.open()
+            page_index = 0
+
+            for scan_path in scan_paths:
+                entry = entry_by_stem.get(scan_path.stem)
+                page_sizes = [
+                    (binder_doc[page_index + i].rect.width, binder_doc[page_index + i].rect.height)
+                    for i in range(pages_per_student)
+                    if page_index + i < binder_doc.page_count
+                ]
+                if not page_sizes:
+                    break
+
+                if entry:
+                    feedback, overall_points = _build_feedback_payload(entry["data"])
+                    student_label = _resolve_student_label(entry["data"])
+                else:
+                    feedback = []
+                    overall_points = None
+                    student_label = None
+
+                overlay_doc = render_feedback_overlays(
+                    anchors=anchors_model,
+                    feedback=feedback,
+                    page_sizes_pt=page_sizes,
+                    overall_points=overall_points,
+                    student_name=student_label,
+                )
+                for page_no, size in enumerate(page_sizes):
+                    page = aggregate_doc.new_page(width=size[0], height=size[1])
+                    if page_no < len(overlay_doc):
+                        page.show_pdf_page(page.rect, overlay_doc, page_no)
+                overlay_doc.close()
+                page_index += pages_per_student
+
+            binder_doc.close()
+            overlay_path = output_dir / "binder-overlay.pdf"
+            aggregate_doc.save(overlay_path)
+            aggregate_doc.close()
+            typer.echo(f"Binder overlay written → {overlay_path}")
+    else:
+        missing = []
+        if not anchors_path:
+            missing.append("--anchors")
+        if not binder_pdf:
+            missing.append("--binder")
+        if not template_pdf:
+            missing.append("--template")
+        if not scans_dir:
+            missing.append("--scans")
+        if missing:
+            typer.echo(
+                f"Binder overlay skipped (provide {', '.join(missing)} to enable overlay generation)."
+            )

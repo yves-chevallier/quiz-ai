@@ -8,14 +8,15 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from openai import OpenAI
 
-from .llm import DEFAULT_VISION_MODEL, build_openai_client
+from .llm import build_openai_client
 from .utils import read_yaml
 
 PROMPT_PATH = Path(__file__).resolve().parent / "assets" / "prompts" / "grading.prompt.md"
+DEFAULT_GRADING_MODEL = "gpt-4o"
 
 
 @dataclass(frozen=True)
@@ -88,12 +89,157 @@ def solution_points_map(solution: Solution) -> Dict[int, float]:
     return out
 
 
+def _coerce_int(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _build_grading_dataset(analysis: Dict[str, Any], solution: Solution) -> Dict[str, Any]:
+    metadata = analysis.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    quiz_meta = solution.raw.get("meta") if isinstance(solution.raw, dict) else {}
+    if not isinstance(quiz_meta, dict):
+        quiz_meta = {}
+
+    items = analysis.get("items")
+    if not isinstance(items, list):
+        items = []
+
+    items_by_qid: Dict[int, List[Dict[str, Any]]] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        qid = _coerce_int(item.get("question_id"))
+        if qid is None:
+            continue
+        items_by_qid.setdefault(qid, []).append(item)
+
+    question_entries: List[Dict[str, Any]] = []
+    for qid, entry in solution.iter_questions():
+        entry_copy = dict(entry)
+        choices = entry_copy.get("choices") or []
+        if not isinstance(choices, list):
+            choices = []
+        correct_choices_raw = entry_copy.get("correct_choices") or []
+        if not isinstance(correct_choices_raw, list):
+            correct_choices_raw = []
+        correct_indices = {
+            idx
+            for idx in (
+                _coerce_int(value)
+                for value in correct_choices_raw
+            )
+            if idx is not None
+        }
+
+        solution_choices: List[Dict[str, Any]] = []
+        for index, choice_text in enumerate(choices, start=1):
+            solution_choices.append(
+                {
+                    "index": index,
+                    "text": str(choice_text),
+                    "correct": index in correct_indices,
+                }
+            )
+
+        analysis_records: List[Dict[str, Any]] = []
+        for seq_index, item in enumerate(items_by_qid.get(qid, []), start=1):
+            analysis_records.append(
+                {
+                    "sequence": seq_index,
+                    "image": item.get("image"),
+                    "raw_response": item.get("raw_response"),
+                    "structured": item.get("json"),
+                    "summary": item.get("summary"),
+                    "question_kind": item.get("question_kind"),
+                    "usage": item.get("usage"),
+                    "processed_at": item.get("processed_at"),
+                }
+            )
+
+        question_entries.append(
+            {
+                "id": qid,
+                "label": entry_copy.get("label"),
+                "max_points": entry_copy.get("points"),
+                "settings": {
+                    "allow_multiple": entry_copy.get("allow_multiple", False),
+                    "partial_credit": entry_copy.get("partial_credit"),
+                    "negative_points": entry_copy.get("negative_points"),
+                    "default_points": entry_copy.get("points"),
+                },
+                "prompt_text": entry_copy.get("question"),
+                "solution": {
+                    "type": entry_copy.get("type"),
+                    "choices": solution_choices,
+                    "extra": {k: v for k, v in entry_copy.items() if k not in {
+                        "id",
+                        "_normalised_id",
+                        "_original_id",
+                        "label",
+                        "question",
+                        "choices",
+                        "correct_choices",
+                        "type",
+                        "points",
+                        "allow_multiple",
+                        "partial_credit",
+                        "negative_points",
+                    }},
+                },
+                "analysis": analysis_records,
+            }
+        )
+
+    dataset = {
+        "student": {
+            "name": metadata.get("student_name"),
+            "name_raw": metadata.get("student_name_raw"),
+            "roster_name": metadata.get("student_name_roster"),
+            "roster_first_name": metadata.get("student_name_roster_first_name"),
+            "roster_last_name": metadata.get("student_name_roster_last_name"),
+            "analysis_metadata": metadata,
+        },
+        "quiz": {
+            "title": quiz_meta.get("title"),
+            "code": quiz_meta.get("code"),
+            "subtitle": quiz_meta.get("subtitle"),
+            "total_questions": len(question_entries),
+            "total_points": solution.total_points,
+        },
+        "analysis_overview": {
+            "source_pdf": analysis.get("source_pdf"),
+            "started_at": analysis.get("started_at"),
+            "completed_at": analysis.get("completed_at"),
+            "usage": analysis.get("usage"),
+            "stats": analysis.get("stats"),
+        },
+        "questions": question_entries,
+    }
+
+    unmapped = [item for qid, items_list in items_by_qid.items() if qid not in solution.questions for item in items_list]
+    if unmapped:
+        dataset["unmatched_analysis"] = unmapped
+
+    return dataset
+
+
 def run_grading(
     analysis: Dict[str, Any],
     solution: Solution,
     *,
     client: Optional[OpenAI] = None,
-    model: str = DEFAULT_VISION_MODEL,
+    model: str = DEFAULT_GRADING_MODEL,
     user_label: Optional[str] = None,
     prompt_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
@@ -103,7 +249,7 @@ def run_grading(
     client = client or build_openai_client()
     prompt_file = prompt_path or PROMPT_PATH
     prompt_text = prompt_file.read_text(encoding="utf-8")
-    solution_text = solution.source_text or json.dumps(solution.raw, ensure_ascii=False)
+    dataset = _build_grading_dataset(analysis, solution)
     payload = client.responses.create(
         model=model,
         input=[
@@ -114,15 +260,9 @@ def run_grading(
             {
                 "role": "user",
                 "content": [
-                    {"type": "input_text", "text": "Student analysis JSON:"},
                     {
                         "type": "input_text",
-                        "text": json.dumps(analysis, ensure_ascii=False),
-                    },
-                    {"type": "input_text", "text": "Official quiz YAML source:"},
-                    {
-                        "type": "input_text",
-                        "text": solution_text,
+                        "text": json.dumps(dataset, ensure_ascii=False),
                     },
                 ],
             },
@@ -132,7 +272,14 @@ def run_grading(
     raw_text = getattr(payload, "output_text", None)
     if not raw_text:
         raise RuntimeError("Grading model returned an empty response.")
-    return json.loads(raw_text)
+    text = raw_text.strip()
+    if text.startswith("```"):
+        # Remove optional Markdown code fences such as ```json ... ```
+        fence_end = text.find("\n")
+        closing = text.rfind("```")
+        if fence_end != -1 and closing != -1 and closing > fence_end:
+            text = text[fence_end + 1 : closing].strip()
+    return json.loads(text)
 
 
 def compute_points_from_grades(

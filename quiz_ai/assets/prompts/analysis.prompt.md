@@ -47,7 +47,7 @@ Return **a single valid JSON array**, no explanations or markdown.
 ## VISUAL INTERPRETATION RULES
 
 1. **Describe what is visible first**, then assign the `"mark"` type.
-2. **Preserve printed order** of choices (top to bottom).
+2. **Preserve printed order** of choices column by column: read each column from top to bottom, then move left to right (e.g. A, B, then next column starts at C, then D, etc.).
 3. Each `"mark"` reflects the *shape seen*, not the intended answer.
 4. **Do not omit or summarize** any visible trace.
 5. If handwriting is truncated or out of frame, mention it.
@@ -127,3 +127,11 @@ If an MCQ shows a printed circle with an X drawn across it and a faint outer cir
   }
 ]
 ```
+* When choices are arranged in a grid or multi-column layout, treat them as vertical columns. Read downwards within each column before moving to the next column on the right. For example, if the page shows
+
+  ```
+  A   C   E
+  B   D   F
+  ```
+
+  the expected sequence is `A, B, C, D, E, F`.
