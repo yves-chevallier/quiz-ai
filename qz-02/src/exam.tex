@@ -1,0 +1,290 @@
+\documentclass[french,a4paper,addpoints,11pt]{exam}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{fontspec}
+\usepackage{hexam}
+\usepackage{bashful}
+\usepackage{booktabs}
+\usepackage{hyperref}     % formulaires / widgets PDF
+\usepackage{tikz}         % positionnement overlay
+\usepackage{everyshi}
+
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{xcolor}
+\usepackage{etoolbox}
+\usepackage{zref-savepos}
+
+
+
+
+\usetikzlibrary{calc}
+\hypersetup{pdfborder={0 0 0}, colorlinks=false} % pas de bordures visibles
+
+\setlength{\itemsep}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\topsep}{0pt}
+
+\lstMakeShortInline|
+\pointsdroppedatright
+\renewcommand{\checkboxeshook}{%
+  \settowidth{\leftmargin}{W.}
+  \setlength{\topsep}{1em}
+  \labelwidth\leftmargin\advance\labelwidth-\labelsep%
+}
+\renewcommand{\partshook}{\setlength{\itemsep}{1em}}
+
+\setlength{\gridsize}{5mm}
+\setlength{\gridlinewidth}{0.1pt}
+\colorgrids
+\definecolor{GridColor}{gray}{0.5}
+\definecolor{FillWithDottedLinesColor}{gray}{0.5}
+
+\thispagestyle{empty}
+
+\title{Quiz Python\\ QZ-02}
+
+\author{Prof. Yves Chevallier}
+\department{Département TIN}
+\school{Haute École d'Ingénierie et de Gestion du Canton de Vaud}
+
+\date{4 novembre 2025}
+
+\makeatletter
+\renewcommand{\questionlabel}{%
+  \Hy@raisedlink{\hypertarget{Q\thequestion-anchor}{}}%
+  \thequestion.
+}
+\makeatother
+
+\begin{document}
+
+\begin{coverpages}
+    \maketitle
+    \thispagestyle{empty}
+
+    \vspace{0.1in}
+
+    \fbox{\fbox{\parbox{5.5in}{
+                \textbf{Consignes :}
+                \vskip 1em%
+                \begin{itemize}
+                    \item Écrire votre nom et votre prénom sur la première page.
+                    \item Écrire lisiblement, au stylo ou au crayon à papier gras.
+                    \item Répondre aux questions dans les espaces appropriés.
+                    \item Relire toutes vos réponses avant de rendre votre travail.
+                    \item Rendre toutes les feuilles de ce quiz.
+                    \item Aucun moyen de communication autorisé.
+                    \item Toutes les réponses concernent le langage Python 3.10.
+                    \item Cochez les questions à choix multiple avec une croix \textbf{X}.
+                \end{itemize}
+            }}}
+
+\end{coverpages}
+\setcounter{page}{2}
+\begin{questions}
+
+    \question Quel énoncé décrit le mieux le concept d'une blockchain ?
+
+    \begin{checkboxes}
+        \CorrectChoice Chaque bloc contient un \emph{hash} du bloc précédent, ce qui les relie en chaîne.
+        \choice Chaque bloc à un lien vers ses parents et ses déscendants.
+        \choice Une blockchain est dossier spécialisé dans le stockage de fichiers.
+        \choice La blockchain est un protocole de communication entre serveurs web.
+    \end{checkboxes}
+
+
+    \question Qu'appelle-t-on une transformation non bijective ?
+
+    \begin{checkboxes}
+        \choice Une transformation qui est à la fois injective et surjective
+        \CorrectChoice Une transformation qui n'est pas inversible car son espace d'arrivée est de dimension inférieure à son espace de départ
+        \choice Une transformation linéaire qui conserve les distances
+        \choice La fonction sinus ou cosinus par exemple
+    \end{checkboxes}
+
+    \question Quel est l'intérêt principal d'une fonction de hachage cryptographique comme SHA-256 ?
+
+    \begin{multicols}{2}
+        \begin{checkboxes}
+            \choice Chiffrer un message de bout en bout
+            \choice Compresser un fichier sans perte
+            \CorrectChoice Générer une signature de taille fixe
+            \choice Convertir un nombre en binaire
+        \end{checkboxes}
+    \end{multicols}
+
+    \question Quelle affirmation décrit correctement la différence entre \lstinline|git merge| et \lstinline|git rebase| ?
+
+    \begin{checkboxes}
+        \choice \lstinline|git rebase| supprime l'historique, \lstinline|git merge| le conserve
+        \choice Les deux commandes produisent exactement les mêmes commits
+        \choice \lstinline|git merge| n'est disponible que sur GitHub
+        \CorrectChoice \lstinline|git merge| crée un commit de fusion alors que \lstinline|git rebase| réécrit l'historique pour appliquer vos commits après une autre branche
+    \end{checkboxes}
+
+    \question Dans quel cas la création d'une branche Git est-elle conseillée ?
+        \begin{checkboxes}
+            \choice Pour sauvegarder automatiquement les fichiers temporaires
+            \choice Pour exécuter un script Python
+            \CorrectChoice Lorsqu'on démarre une nouvelle fonctionnalité ou un correctif indépendant
+            \choice Pour supprimer rapidement des commits
+        \end{checkboxes}
+
+    \question Quel est le principe de la preuve de travail (\emph{proof-of-work}) utilisée par Bitcoin ?
+
+    \begin{checkboxes}
+        \choice Les utilisateurs doivent prouver leur identité auprès d'une autorité centrale
+        \CorrectChoice Les mineurs doivent calculer un \emph{hash} commençant par un certain nombre de zéros pour valider un bloc
+        \choice Les transactions sont validées par un vote majoritaire non pondéré
+        \choice Le protocole duplique chaque bloc sur plusieurs chaînes concurrentes
+    \end{checkboxes}
+
+    \clearpage
+    \question Quelle sortie affiche le code suivant ?
+
+\begin{lstlisting}
+letters = ['a', 'b', 'c']
+numbers = [1, 2, 3]
+print(list(zip(letters, numbers)))
+\end{lstlisting}
+
+    \begin{multicols}{2}
+        \begin{checkboxes}
+            \choice \lstinline|['a', 'b', 'c', 1, 2, 3]|
+            \choice \lstinline|{'a': 1, 'b': 2, 'c': 3}|
+            \CorrectChoice \lstinline|[('a', 1), ('b', 2), ('c', 3)]|
+            \choice \lstinline|[('a', 'b', 'c'), (1, 2, 3)]|
+        \end{checkboxes}
+    \end{multicols}
+
+    \question À propos de \lstinline|**kwargs| et de \lstinline|kwargs.get|, quelle affirmation est correcte ?
+
+    \begin{checkboxes}
+        \CorrectChoice \lstinline|**kwargs| regroupe les arguments nommés dans un dictionnaire et \lstinline|kwargs.get('clé', défaut)| retourne une valeur sans lever d'exception si la clé est absente
+        \choice \lstinline|**kwargs| crée automatiquement des variables globales
+        \choice \lstinline|**kwargs| est utilisé pour les arguments positionnels
+        \choice \lstinline|**kwargs| ne peut être utilisé qu'avec des nombres
+    \end{checkboxes}
+
+    \question Un dossier peut être considéré comme un module importable en Python à condition de...
+
+    \begin{checkboxes}
+        \CorrectChoice Contenir un fichier \lstinline|__init__.py| même vide
+        \choice Contenir un fichier \lstinline|requirements.txt|
+        \choice Porter le même nom que le projet Git
+        \choice Contenir des fichiers \lstinline|.py|
+    \end{checkboxes}
+
+    \question Comment réalise-t-on un import relatif à partir d'un module ?
+
+    \begin{checkboxes}
+        \choice En préfixant le chemin par \lstinline|import://|
+        \choice En ajoutant le chemin complet du disque dans l'instruction \lstinline|import|
+        \choice En déclarant une variable globale appelée \lstinline|__relative__|
+        \CorrectChoice En utilisant \lstinline|from .sous_module import nom| ou \lstinline|from ..package import nom|
+    \end{checkboxes}
+
+    \question À quoi sert la fonction \lstinline|enumerate| dans une boucle \lstinline|for| ?
+
+    \begin{checkboxes}
+        \CorrectChoice Retourner à la fois l'indice et la valeur lors de l'itération
+        \choice Trier automatiquement la liste avant l'itération
+        \choice Convertir une liste en dictionnaire
+        \choice Arrêter la boucle après trois éléments
+    \end{checkboxes}
+
+    \question Quel est l'avantage principal du mot clé \lstinline|with| lors de l'ouverture d'un fichier en Python ?
+
+    \begin{checkboxes}
+        \CorrectChoice Il garantit la fermeture du fichier même en cas d'exception
+        \choice Il chiffre automatiquement le contenu du fichier
+        \choice Il supprime le fichier après lecture
+        \choice Il copie le fichier dans un dossier temporaire
+    \end{checkboxes}
+
+    \question Si on souhaite surcharger l'addition pour l'objet \lstinline|foo| dans le cas \lstinline|42 + foo| ?
+
+    \begin{checkboxes}
+        \choice Il faut surcharger la méthode \lstinline|__add__| dans la classe de \lstinline|foo|
+        \CorrectChoice Il faut surcharger la méthode \lstinline|__radd__| dans la classe de \lstinline|foo|
+        \choice Il faut définir une fonction \lstinline|add(foo)| en dehors de la classe
+        \choice Il faut utiliser la fonction intégrée \lstinline|sum()|
+    \end{checkboxes}
+
+    \question Quelle est la sortie du code suivant ?
+
+\begin{lstlisting}
+nums = [1, 2, 3, 4]
+print(nums[1:-1])
+\end{lstlisting}
+
+    \begin{multicols}{2}
+        \begin{checkboxes}
+            \CorrectChoice \lstinline|[2, 3]|
+            \choice \lstinline|[1, 2, 3, 4]|
+            \choice \lstinline|[1, 4]|
+            \choice \lstinline|[3]|
+        \end{checkboxes}
+    \end{multicols}
+
+    \question Quel est l'effet d'un bloc \lstinline|try ... except| bien écrit ?
+
+    \begin{checkboxes}
+        \CorrectChoice Intercepter et traiter une exception pour éviter l'arrêt brutal du programme
+        \choice Accélérer l'exécution d'un programme Python
+        \choice Empêcher complètement qu'une exception se produise
+        \choice Convertir automatiquement une chaîne de caractères en nombre
+    \end{checkboxes}
+
+    \question Quelle est la particularité principale d'un objet \lstinline|set| en Python ?
+
+    \begin{checkboxes}
+        \CorrectChoice Il ne contient pas de doublons et ne garantit pas l'ordre
+        \choice Il conserve l'ordre d'insertion et autorise les doublons
+        \choice Il ne peut contenir que des chaînes de caractères
+        \choice Il sert uniquement à associer des clés et des valeurs
+    \end{checkboxes}
+
+    \question Quelle est la sortie de l'expression \lstinline|[n * n for n in range(3)]| ?
+
+    \begin{multicols}{2}
+        \begin{checkboxes}
+            \choice \lstinline|[1, 4, 9]|
+            \choice \lstinline|[0, 1, 2, 3]|
+            \CorrectChoice \lstinline|[0, 1, 4]|
+            \choice \lstinline|[2, 4]|
+        \end{checkboxes}
+    \end{multicols}
+
+    \question Que produit l'instruction \lstinline|list(range(5))| ?
+
+    \begin{multicols}{2}
+        \begin{checkboxes}
+            \choice \lstinline|[1, 2, 3, 4, 5]|
+            \choice \lstinline|[0, 5]|
+            \choice \lstinline|[5, 4, 3, 2, 1]|
+            \CorrectChoice \lstinline|[0, 1, 2, 3, 4]|
+        \end{checkboxes}
+    \end{multicols}
+
+    \question À quoi sert le test \lstinline|if __name__ == "__main__":| dans un module Python ?
+
+    \begin{checkboxes}
+        \CorrectChoice À exécuter un bloc de code seulement lorsque le module est lancé comme script principal
+        \choice À empêcher toute importation du module
+        \choice À définir le point d'entrée obligatoire d'une bibliothèque
+        \choice À vérifier la version de Python installée
+    \end{checkboxes}
+
+    \question Quelle affirmation décrit correctement \lstinline|*args| dans la définition d'une fonction Python ?
+
+    \begin{checkboxes}
+        \choice Il transforme automatiquement les arguments en dictionnaire
+        \CorrectChoice Il capture les arguments positionnels supplémentaires dans un tuple
+        \choice Il impose que la fonction n'accepte qu'un seul argument
+        \choice Il convertit les paramètres en chaînes de caractères
+    \end{checkboxes}
+
+\end{questions}
+\end{document}
