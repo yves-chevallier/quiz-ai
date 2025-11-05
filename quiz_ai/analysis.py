@@ -9,7 +9,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from openai import OpenAI
 from PIL import Image
@@ -44,6 +44,7 @@ class AnalysisItem:
     question_kind: Optional[str] = None
     summary: Optional[str] = None
     usage: Optional[Dict[str, int]] = None
+    processed_at: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -325,6 +326,9 @@ def run_analysis(
     model: str = DEFAULT_VISION_MODEL,
     dpi: int = 220,
     user_label: Optional[str] = None,
+    temperature: Optional[float] = None,
+    question_filter: Optional[Set[int]] = None,
+    question_text_map: Optional[Dict[int, str]] = None,
     roster_path: Optional[Path] = None,
     progress: Optional[ProgressCallback] = None,
 ) -> AnalysisResult:
@@ -339,10 +343,27 @@ def run_analysis(
     client = client or build_openai_client()
     images_dir = ensure_directory(output_dir / "images")
 
+    if question_filter:
+        question_filter = {int(q) for q in question_filter}
     expected_question_ids = sorted({region.qnum for page in anchors.pages for region in page.regions_mm})
+    if question_filter:
+        expected_question_ids = [qid for qid in expected_question_ids if qid in question_filter]
     expected_question_id_set = set(expected_question_ids)
-    total_regions_expected = sum(len(page.regions_mm) for page in anchors.pages)
-    pages_with_regions = sum(1 for page in anchors.pages if page.regions_mm)
+    if question_filter:
+        total_regions_expected = sum(
+            1
+            for page in anchors.pages
+            for region in page.regions_mm
+            if region.qnum in expected_question_id_set
+        )
+        pages_with_regions = sum(
+            1
+            for page in anchors.pages
+            if any(region.qnum in expected_question_id_set for region in page.regions_mm)
+        )
+    else:
+        total_regions_expected = sum(len(page.regions_mm) for page in anchors.pages)
+        pages_with_regions = sum(1 for page in anchors.pages if page.regions_mm)
 
     def emit(event: str, payload: Optional[Dict[str, Any]] = None) -> None:
         if progress is None:
@@ -592,6 +613,8 @@ def run_analysis(
             continue
 
         region_dicts = [region.model_dump() for region in anchor_entry.regions_mm]
+        if question_filter:
+            region_dicts = [reg for reg in region_dicts if reg["qnum"] in expected_question_id_set]
         crops = cutter.crop_page_image(
             image_path=page_image.path,
             regions_mm=region_dicts,
@@ -600,6 +623,8 @@ def run_analysis(
             page_index=page_idx,
             base_output_stem=page_image.path.stem,
         )
+        if question_filter:
+            crops = [crop for crop in crops if crop.question_id in expected_question_id_set]
         crops_per_page[page_idx] = crops
         emit(
             "page:crops-ready",
@@ -657,11 +682,18 @@ def run_analysis(
                     "total": total_questions,
                 },
             )
+            effective_prompt = prompt_text
+            if question_text_map and crop.question_id in question_text_map:
+                effective_prompt = (
+                    f"{prompt_text}\n\n---\nPRINTED QUESTION TEXT:\n"
+                    f"{question_text_map[crop.question_id]}"
+                )
             response = call_vision(
                 client,
-                prompt=prompt_text,
+                prompt=effective_prompt,
                 image_data_url=image_data_url,
                 model=model,
+                temperature=temperature,
                 user=user_label,
             )
             raw_text = getattr(response, "output_text", None) or ""
@@ -673,6 +705,7 @@ def run_analysis(
             if _detect_ambiguity(parsed):
                 ambiguous_questions.add(crop.question_id)
 
+            processed_at = _utc_now_iso()
             item = AnalysisItem(
                 question_id=crop.question_id,
                 page_index=crop.page_index,
@@ -683,6 +716,7 @@ def run_analysis(
                 question_kind=question_kind,
                 summary=summary_text,
                 usage=usage,
+                processed_at=processed_at,
             )
             items.append(item)
 
@@ -706,6 +740,7 @@ def run_analysis(
                     "question_kind": item.question_kind,
                     "summary": item.summary,
                     "usage": item.usage,
+                    "processed_at": processed_at,
                 }
             )
 

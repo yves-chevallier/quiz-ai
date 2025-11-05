@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 from collections import deque
 from pathlib import Path
-from typing import Annotated, Any, Deque, Dict, List, Optional, Tuple
+from typing import Annotated, Any, Deque, Dict, List, Optional, Set, Tuple
 
 import typer
 from rich import box
@@ -51,7 +51,7 @@ from .report import (
     write_summary_csv,
 )
 from .split import SplitError, split_responses_pdf
-from .utils import ensure_directory, read_json, write_json
+from .utils import ensure_directory, read_json, read_yaml, write_json
 
 try:
     from typer.rich_utils import console as typer_console
@@ -638,6 +638,15 @@ def analysis(
         int,
         typer.Option("--dpi", min=60, max=600, help="Rendering DPI for PDF rasterisation."),
     ] = 220,
+    temperature: Annotated[
+        float,
+        typer.Option(
+            "--temperature",
+            min=0.0,
+            max=2.0,
+            help="Sampling temperature forwarded to the vision model (default 0 for deterministic output).",
+        ),
+    ] = 0.0,
     prompt_path: Annotated[
         Optional[Path],
         typer.Option(
@@ -654,6 +663,23 @@ def analysis(
             help="Prompt Markdown used to extract cover page metadata.",
             exists=True,
             readable=True,
+        ),
+    ] = None,
+    quiz_yaml: Annotated[
+        Optional[Path],
+        typer.Option(
+            "-q",
+            "--quiz",
+            help="Optional quiz YAML to supply printed question text to the vision model.",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
+    only_questions: Annotated[
+        Optional[List[int]],
+        typer.Option(
+            "--only-question",
+            help="Restrict analysis to specific question id(s). Repeat for multiple.",
         ),
     ] = None,
     roster_path: Annotated[
@@ -695,6 +721,12 @@ def analysis(
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
+    question_text_map: Optional[Dict[int, str]] = None
+    if quiz_yaml:
+        question_text_map = _question_text_map_from_yaml(quiz_yaml)
+
+    question_filter_set: Optional[Set[int]] = set(int(q) for q in only_questions) if only_questions else None
+
     client = build_openai_client()
     analysis_path = out_dir / "analysis.json"
     console = typer_console
@@ -711,6 +743,9 @@ def analysis(
                 dpi=dpi,
                 prompt_path=prompt_path or PROMPT_PATH,
                 title_prompt_path=title_prompt_path,
+                temperature=temperature,
+                question_filter=question_filter_set,
+                question_text_map=question_text_map,
                 roster_path=roster_path,
                 progress=progress_reporter,
             )
@@ -1343,6 +1378,31 @@ def _resolve_student_label(grades: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def _question_text_map_from_yaml(path: Path) -> Dict[int, str]:
+    data = read_yaml(path)
+    if not isinstance(data, dict):
+        return {}
+    questions = data.get("questions")
+    if not isinstance(questions, list):
+        return {}
+    mapping: Dict[int, str] = {}
+    for idx, entry in enumerate(questions, start=1):
+        if not isinstance(entry, dict):
+            continue
+        raw_id = entry.get("id")
+        qid: int
+        if isinstance(raw_id, int):
+            qid = raw_id
+        elif isinstance(raw_id, str) and raw_id.strip().isdigit():
+            qid = int(raw_id.strip())
+        else:
+            qid = idx
+        question_text = entry.get("question")
+        if isinstance(question_text, str) and question_text.strip():
+            mapping[qid] = question_text.strip()
+    return mapping
+
+
 @app.command()
 def annotate(
     pdf_input: Annotated[
@@ -1479,6 +1539,7 @@ def grade(
         raise typer.BadParameter(str(exc)) from exc
 
     client = build_openai_client()
+    question_text_map = _question_text_map_from_yaml(quiz_yaml)
     try:
         run_analysis(
             responses_pdf=responses_pdf,
@@ -1488,6 +1549,8 @@ def grade(
             model=model,
             prompt_path=prompt_path or PROMPT_PATH,
             dpi=dpi,
+            temperature=0.0,
+            question_text_map=question_text_map,
             roster_path=roster_path,
         )
     except RosterError as exc:

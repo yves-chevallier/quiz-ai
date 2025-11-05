@@ -7,12 +7,12 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import httpx
 from openai import OpenAI
 
-DEFAULT_VISION_MODEL = "gpt-5"
+DEFAULT_VISION_MODEL = "gpt-4o-mini"
 
 
 @dataclass(frozen=True)
@@ -63,11 +63,15 @@ def call_vision(
     prompt: str,
     image_data_url: str,
     model: str = DEFAULT_VISION_MODEL,
+    temperature: Optional[float] = None,
     user: Optional[str] = None,
 ) -> Any:
     """
     Execute a vision request and return the raw OpenAI response object.
     """
+    kwargs: Dict[str, Any] = {}
+    if temperature is not None:
+        kwargs["temperature"] = float(temperature)
     return client.responses.create(
         model=model,
         input=[
@@ -80,4 +84,5 @@ def call_vision(
             }
         ],
         user=user,
+        **kwargs,
     )
