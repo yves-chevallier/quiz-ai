@@ -1,12 +1,12 @@
 schema_version: "1.0"
 meta:
   title: "Quiz Python"
-  subtitle: "QZ-01"
-  code: "QZ-01"
+  subtitle: "QZ-02"
+  code: "QZ-02"
   author: "Prof. Yves Chevallier"
   department: "Département TIN"
   school: "Haute École d'Ingénierie et de Gestion du Canton de Vaud"
-  date: "2025-10-08"
+  date: "2025-11-04"
   locale: "fr-CH"
   python_version: "3.10"
   directives:
@@ -17,6 +17,7 @@ meta:
     - "Rendre toutes les feuilles de ce quiz."
     - "Aucun moyen de communication autorisé."
     - "Toutes les réponses concernent le langage Python 3.10."
+    - "Cochez les questions à choix multiple avec une croix X."
   randomization:
     shuffle_questions: false
     shuffle_choices: true
@@ -27,241 +28,234 @@ meta:
 
 questions:
   - type: multiple_choice
-    question: >
-      Python est un langage qui a été créé par Guido van Rossum en 1991.
-      Guido van Rossum est souvent appelé le BDFL de Python. Que signifie BDFL ?
+    question: "Quel énoncé décrit le mieux le concept d'une blockchain ?"
     choices:
-      - Big Data Friendly Language
-      - Best Data Format Language
-      - Benevolent Dictator For Life
-      - Bold Decision for Life
-      - Basic Data Flow Language
-      - Built-in Data Function Library
-    correct_choices: [3]
+      - "Chaque bloc contient un hash du bloc précédent, ce qui les relie en chaîne."
+      - "Chaque bloc à un lien vers ses parents et ses déscendants."
+      - "Une blockchain est dossier spécialisé dans le stockage de fichiers."
+      - "La blockchain est un protocole de communication entre serveurs web."
+    correct_choices: [1]
     allow_multiple: false
     points: 1
 
   - type: multiple_choice
-    question: Que signifie REPL en Python ?
+    question: "Qu'appelle-t-on une transformation non bijective ?"
     choices:
-      - Runtime Environment for Python Libraries, utilisé pour exécuter des modules Python
-      - Resource Evaluation Processing Loop, principalement utilisé dans les systèmes embarqués
-      - Read-Eval-Print Loop, utile pour tester rapidement des instructions Python
-      - Repetitive Execution Program Library, déconseillé pour les débutants
-      - Real-time Execution Programming Language, utilisé pour les applications temps réel
-      - Built-in Data Function Library
-    correct_choices: [3]
-    allow_multiple: false
-    points: 1
-
-  - type: multiple_choice
-    question: "Quel est le programme utilisé préférablement pour utiliser Python comme calculatrice en ligne de commande ?"
-    choices: ["calc", "python", "ipython", "qpython", "jupyter", "notebook"]
-    correct_choices: [3]
-    allow_multiple: false
-    points: 1
-
-  - id: 5
-    type: multiple_fill_in
-    question: |
-      Inscrire après chaque syntaxe Python le type correspondant à l'expression.
-
-      $$\sqrt{2}$$
-    items:
-      - { prompt: "`[1]`",                        answer: "liste" }
-      - { prompt: "`{1}`",                        answer: "set" }
-      - { prompt: "`{1:2}`",                      answer: "dictionnaire" }
-      - { prompt: "`(1,2)`",                      answer: "tuple" }
-      - { prompt: "`(i for i in range(3))`",      answer: "générateur" }
-      - { prompt: "`'abc'`",                      answer: "chaine de caractères" }
-    fill_width: 30
-    points: 1
-
-  - type: multiple_choice
-    question: 'Quel est la sortie du code suivant `"12314231423225".split("3")` ?'
-    choices:
-      - "`['12314231421225']`"
-      - "`['1', '2', '4', '2', '1', '2', '25']`"
-      - "`['12', '142', '142', '225']`"
-      - "`{1,2,3,4,2,3,1,4,2,3,2,2,5}`"
-      - "Segmentation fault"
-    correct_choices: [3]
-    allow_multiple: false
-    points: 1
-
-  - type: multiple_choice
-    question: >
-      Je souhaite importer la fonction `sqrt` sans polluer l'espace de nom courant
-      de mon programme quelle est la bonne commande ?
-    choices:
-      - "`import sqrt`"
-      - "`from math import sqrt`"
-      - "`from sqrt import math`"
-      - "`using math.sqrt`"
-      - "`from math import *`"
+      - "Une transformation qui est à la fois injective et surjective"
+      - "Une transformation qui n'est pas inversible car son espace d'arrivée est de dimension inférieure à son espace de départ"
+      - "Une transformation linéaire qui conserve les distances"
+      - "La fonction sinus ou cosinus par exemple"
     correct_choices: [2]
     allow_multiple: false
     points: 1
 
   - type: multiple_choice
-    question: "Python est un langage à typage dynamique. Qu'est-ce que cela signifie ?"
+    question: "Quel est l'intérêt principal d'une fonction de hachage cryptographique comme SHA-256 ?"
     choices:
-      - Les variables doivent avoir un type spécifié avant utilisation
-      - Le type d'une variable est déterminé automatiquement au moment de l'exécution
-      - Python n'alloue que des variables de type entier
-      - Python utilise des types fixes comme dans C
-    correct_choices: [2]
+      - "Chiffrer un message de bout en bout"
+      - "Compresser un fichier sans perte"
+      - "Générer une signature de taille fixe"
+      - "Convertir un nombre en binaire"
+    correct_choices: [3]
     allow_multiple: false
     points: 1
 
-  - type: short_answer
-    question: >
-      Les modèles de données en Python définissent des comportements spécifiques
-      pour les objets. Quelle méthode spéciale est typiquement appelée à l'initialisation
-      d'une instance de classe ?
-    answer: "__init__"
-    text_check: { case_sensitive: false }
-    points: 1
-
-  - type: multiple_fill_in
-    question: "Quelles sont les deux méthodes spéciales utilisées pour obtenir un itérateur et l'utiliser ?"
-    items:
-      # Accept variations with or without double underscores
-      - {expected: "__iter__", pattern: "\b(?:__)?iter(?:__)?\b" }
-      - {expected: "__next__", accepted: ["next", "__next__", "__next"] }
-    strict_order: false
-    fill_width: 30
-    points: 1
-
-  - type: fill_in_the_blank
-    question: "Quels sont les noms souvent utilisés pour définir 1. les actions d'un objet et 2. les variables d'état d'un objet ?"
-    items:
-      - "méthdodes"
-      - "attributs"
-    strict_order: false
-    fill_width: 30
-    points: 1
-
   - type: multiple_choice
-    question: "Quelle est la meilleure définition de `self` en Python ?"
+    question: "Quelle affirmation décrit correctement la différence entre `git merge` et `git rebase` ?"
     choices:
-      - C'est un mot clé qui permet de définir une fonction
-      - C'est un mot clé qui permet de définir une variable
-      - C'est un mot clé utilisé dans les décorateurs
-      - C'est une convention pour référencer l'instance de la classe actuelle dans une méthode
+      - "`git rebase` supprime l'historique, `git merge` le conserve"
+      - "Les deux commandes produisent exactement les mêmes commits"
+      - "`git merge` n'est disponible que sur GitHub"
+      - "`git merge` crée un commit de fusion alors que `git rebase` réécrit l'historique pour appliquer vos commits après une autre branche"
     correct_choices: [4]
     allow_multiple: false
     points: 1
 
   - type: multiple_choice
-    question: "Le mot clé `next` est utilisé dans quel contexte en Python ?"
+    question: "Dans quel cas la création d'une branche Git est-elle conseillée ?"
     choices:
-      - Pour sauter une itération dans une boucle `for`
-      - Pour obtenir le prochain élément d'un itérateur
-      - Pour obtenir le prochain élément d'un dictionnaire
-      - Pour arrêter une boucle `for`
+      - "Pour sauvegarder automatiquement les fichiers temporaires"
+      - "Pour exécuter un script Python"
+      - "Lorsqu'on démarre une nouvelle fonctionnalité ou un correctif indépendant"
+      - "Pour supprimer rapidement des commits"
+    correct_choices: [3]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Quel est le principe de la preuve de travail (proof-of-work) utilisée par Bitcoin ?"
+    choices:
+      - "Les utilisateurs doivent prouver leur identité auprès d'une autorité centrale"
+      - "Les mineurs doivent calculer un hash commençant par un certain nombre de zéros pour valider un bloc"
+      - "Les transactions sont validées par un vote majoritaire non pondéré"
+      - "Le protocole duplique chaque bloc sur plusieurs chaînes concurrentes"
     correct_choices: [2]
     allow_multiple: false
     points: 1
 
   - type: multiple_choice
     question: |
-      Quelle est la valeur de `x` après l'exécution du code suivant ?
+      Quelle sortie affiche le code suivant ?
+
       ```python
-      u = {1: 20, 3: 40, 5: 60}
-      x = len(u)
+      letters = ['a', 'b', 'c']
+      numbers = [1, 2, 3]
+      print(list(zip(letters, numbers)))
       ```
-    choices: [20, 3, 4, 5, 6, 40, 60]
+    choices:
+      - "`['a', 'b', 'c', 1, 2, 3]`"
+      - "`{'a': 1, 'b': 2, 'c': 3}`"
+      - "`[('a', 1), ('b', 2), ('c', 3)]`"
+      - "`[('a', 'b', 'c'), (1, 2, 3)]`"
+    correct_choices: [3]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "À propos de `**kwargs` et de `kwargs.get`, quelle affirmation est correcte ?"
+    choices:
+      - "`**kwargs` regroupe les arguments nommés dans un dictionnaire et `kwargs.get('clé', défaut)` retourne une valeur sans lever d'exception si la clé est absente"
+      - "`**kwargs` crée automatiquement des variables globales"
+      - "`**kwargs` est utilisé pour les arguments positionnels"
+      - "`**kwargs` ne peut être utilisé qu'avec des nombres"
+    correct_choices: [1]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Un dossier peut être considéré comme un module importable en Python à condition de..."
+    choices:
+      - "Contenir un fichier `__init__.py` même vide"
+      - "Contenir un fichier `requirements.txt`"
+      - "Porter le même nom que le projet Git"
+      - "Contenir des fichiers `.py`"
+    correct_choices: [1]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Comment réalise-t-on un import relatif à partir d'un module ?"
+    choices:
+      - "En préfixant le chemin par `import://`"
+      - "En ajoutant le chemin complet du disque dans l'instruction `import`"
+      - "En déclarant une variable globale appelée `__relative__`"
+      - "En utilisant `from .sous_module import nom` ou `from ..package import nom`"
+    correct_choices: [4]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "À quoi sert la fonction `enumerate` dans une boucle `for` ?"
+    choices:
+      - "Retourner à la fois l'indice et la valeur lors de l'itération"
+      - "Trier automatiquement la liste avant l'itération"
+      - "Convertir une liste en dictionnaire"
+      - "Arrêter la boucle après trois éléments"
+    correct_choices: [1]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Quel est l'avantage principal du mot clé `with` lors de l'ouverture d'un fichier en Python ?"
+    choices:
+      - "Il garantit la fermeture du fichier même en cas d'exception"
+      - "Il chiffre automatiquement le contenu du fichier"
+      - "Il supprime le fichier après lecture"
+      - "Il copie le fichier dans un dossier temporaire"
+    correct_choices: [1]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Si on souhaite surcharger l'addition pour l'objet `foo` dans le cas `42 + foo` ?"
+    choices:
+      - "Il faut surcharger la méthode `__add__` dans la classe de `foo`"
+      - "Il faut surcharger la méthode `__radd__` dans la classe de `foo`"
+      - "Il faut définir une fonction `add(foo)` en dehors de la classe"
+      - "Il faut utiliser la fonction intégrée `sum()`"
     correct_choices: [2]
     allow_multiple: false
     points: 1
 
   - type: multiple_choice
     question: |
-      Que sera affiché sur la sortie standard ?
+      Quelle est la sortie du code suivant ?
+
       ```python
-      x = [1, 2, 3]
-      y = x
-      y.append(4)
-      print(x)
+      nums = [1, 2, 3, 4]
+      print(nums[1:-1])
       ```
     choices:
-      - "`[3, 2, 1]`"
-      - "`[1, 2, 3]`"
+      - "`[2, 3]`"
       - "`[1, 2, 3, 4]`"
-      - "`[1, 2, 3, 4, 4]`"
-      - "`[1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3]`"
-      - "`None`"
+      - "`[1, 4]`"
+      - "`[3]`"
+    correct_choices: [1]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Quel est l'effet d'un bloc `try ... except` bien écrit ?"
+    choices:
+      - "Intercepter et traiter une exception pour éviter l'arrêt brutal du programme"
+      - "Accélérer l'exécution d'un programme Python"
+      - "Empêcher complètement qu'une exception se produise"
+      - "Convertir automatiquement une chaîne de caractères en nombre"
+    correct_choices: [1]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Quelle est la particularité principale d'un objet `set` en Python ?"
+    choices:
+      - "Il ne contient pas de doublons et ne garantit pas l'ordre"
+      - "Il conserve l'ordre d'insertion et autorise les doublons"
+      - "Il ne peut contenir que des chaînes de caractères"
+      - "Il sert uniquement à associer des clés et des valeurs"
+    correct_choices: [1]
+    allow_multiple: false
+    points: 1
+
+  - type: multiple_choice
+    question: "Quelle est la sortie de l'expression `[n * n for n in range(3)]` ?"
+    choices:
+      - "`[1, 4, 9]`"
+      - "`[0, 1, 2, 3]`"
+      - "`[0, 1, 4]`"
+      - "`[2, 4]`"
     correct_choices: [3]
     allow_multiple: false
     points: 1
 
-  - type: short_answer
-    question: |
-      Quelle est la valeur affichée sur la sortie standard ?
-      ```python
-      def foo(a, b=2, c=3):
-          return a - b * c
-
-      result = foo(5, c=10)
-      print(result)
-      ```
-    answer: "-15"
-    points: 1
-
   - type: multiple_choice
-    question: |
-      Que voyez-vous sur la sortie standard ?
-      ```python
-      u = [1, 2, 3, 4, 5]
-      print([n**2 for n in u if n % 2 == 0])
-      ```
+    question: "Que produit l'instruction `list(range(5))` ?"
     choices:
-      - "`[1, 4, 9, 16, 25]`"
-      - "`[1, 9, 25]`"
       - "`[1, 2, 3, 4, 5]`"
-      - "`[4, 16]`"
+      - "`[0, 5]`"
+      - "`[5, 4, 3, 2, 1]`"
+      - "`[0, 1, 2, 3, 4]`"
     correct_choices: [4]
     allow_multiple: false
     points: 1
 
   - type: multiple_choice
-    question: "À quoi sert le module pip en Python ?"
+    question: "À quoi sert le test `if __name__ == \"__main__\":` dans un module Python ?"
     choices:
-      - Compiler du code Python
-      - Gérer les dépendances et automatiser la création d'environnements virtuels pour Python
-      - Installer des modules Python depuis le terminal
-      - Optimiser les performances du code
-      - Relier la sortie standard d'un programme à un autre
-    correct_choices: [3]
+      - "À exécuter un bloc de code seulement lorsque le module est lancé comme script principal"
+      - "À empêcher toute importation du module"
+      - "À définir le point d'entrée obligatoire d'une bibliothèque"
+      - "À vérifier la version de Python installée"
+    correct_choices: [1]
     allow_multiple: false
     points: 1
 
   - type: multiple_choice
-    question: "Quel est le type de `**kwargs` dans la signature d'une fonction Python ?"
-    choices: ["Une liste", "Un dictionnaire", "Un set", "Un tuple"]
-    correct_choices: [2]
-    allow_multiple: false
-    points: 1
-
-  - type: multiple_choice
-    question: "Quelle est la différence principale entre une liste et un tuple en Python ?"
+    question: "Quelle affirmation décrit correctement `*args` dans la définition d'une fonction Python ?"
     choices:
-      - Une liste est immuable, un tuple est mutable
-      - Un tuple est immuable, une liste est mutable
-      - Une liste peut contenir des types différents, un tuple ne peut contenir qu'un seul type
-      - Un tuple peut contenir des types différents, une liste ne peut contenir qu'un seul type
-    correct_choices: [2]
-    allow_multiple: false
-    points: 1
-
-  - type: multiple_choice
-    question: "Quel est l'intérêt principal d'utiliser des environnements virtuels en Python ?"
-    choices:
-      - Améliorer les performances d'exécution des scripts Python
-      - Isoler les dépendances de projets Python pour éviter les conflits entre versions de paquets
-      - Permettre l'exécution de scripts Python sur des systèmes d'exploitation différents
-      - Faciliter le déploiement de scripts Python sur des serveurs distants
+      - "Il transforme automatiquement les arguments en dictionnaire"
+      - "Il capture les arguments positionnels supplémentaires dans un tuple"
+      - "Il impose que la fonction n'accepte qu'un seul argument"
+      - "Il convertit les paramètres en chaînes de caractères"
     correct_choices: [2]
     allow_multiple: false
     points: 1
