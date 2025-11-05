@@ -424,6 +424,26 @@ def _grade_stamp_item(
     )
 
 
+def _student_name_stamp_item(
+    page_w_mm: float,
+    page_h_mm: float,
+    student_name: str,
+) -> Optional[MarkItem]:
+    cleaned = (student_name or "").strip()
+    if not cleaned:
+        return None
+    x_mm = max(0.0, page_w_mm - 10.0)
+    y_mm = max(0.0, page_h_mm - 15.0)
+    return MarkItem(
+        kind="mark",
+        x_mm=x_mm,
+        y_mm=y_mm,
+        text=cleaned,
+        fontsize=18,
+        align="right",
+    )
+
+
 def _register_hand_font(c: canvas.Canvas, font_path: Path | None = None) -> None:
     """Register a handwriting font if available; fallback to Helvetica."""
     font_to_use = _resolve_font_path(font_path)
@@ -652,6 +672,7 @@ def annotate_pdf(
     feedback: Iterable[Dict[str, object]] | Iterable[Feedback],
     *,
     overall_points: Optional[Tuple[float, float]] = None,
+    student_name: Optional[str] = None,
     font_path: Optional[Path] = None,
     check_icon: Path = Path("assets/glyphs/check.svg"),
     cross_icon: Path = Path("assets/glyphs/cross.svg"),
@@ -674,6 +695,8 @@ def annotate_pdf(
         ``remarks``, ``justification``).
     overall_points : Optional[Tuple[float, float]]
         Tuple ``(points_obtenus, points_totaux)`` to display the hybrid grade on the first page.
+    student_name : Optional[str]
+        Cleaned student name to stamp on the cover page (top-right corner).
     font_path : Optional[Path]
         Optional path to a TTF font used for text rendering. Falls back to the bundled handwriting font.
     check_icon : Path
@@ -748,6 +771,10 @@ def annotate_pdf(
                 stamp = _grade_stamp_item(page_w_mm, page_h_mm, overall_points)
                 if stamp:
                     extra_items.append(stamp)
+            if pno == 0 and student_name:
+                name_stamp = _student_name_stamp_item(page_w_mm, page_h_mm, student_name)
+                if name_stamp:
+                    extra_items.append(name_stamp)
 
             # Find the matching page entry in anchors (O(n) is fine; page count is small)
             page_entry = next((p for p in anchors.pages if p.page_index == pno), None)

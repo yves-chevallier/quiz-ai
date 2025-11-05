@@ -1314,6 +1314,35 @@ def _build_feedback_payload(
     return feedback, overall_points
 
 
+def _resolve_student_label(grades: Dict[str, Any]) -> Optional[str]:
+    """Best-effort resolution of the student's real name for annotations."""
+
+    def _norm(value: str) -> str:
+        return " ".join(value.split()).strip().lower()
+
+    metadata = grades.get("_analysis_metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    roster_name = str(metadata.get("student_name_roster") or "").strip()
+    handwritten_name = str(metadata.get("student_name") or "").strip()
+    student_block = grades.get("student") if isinstance(grades.get("student"), dict) else {}
+    official_name = str(student_block.get("name") or "").strip() if isinstance(student_block, dict) else ""
+
+    if roster_name:
+        if handwritten_name and _norm(roster_name) != _norm(handwritten_name):
+            return f"{roster_name} (lu: {handwritten_name})"
+        return roster_name
+
+    if handwritten_name:
+        return handwritten_name
+
+    if official_name:
+        return official_name
+
+    return None
+
+
 @app.command()
 def annotate(
     pdf_input: Annotated[
@@ -1348,6 +1377,7 @@ def annotate(
     anchors_model = load_anchors(anchors_json)
     grades = read_json(grades_json)
     feedback, overall_points = _build_feedback_payload(grades)
+    student_label = _resolve_student_label(grades)
 
     annotate_pdf(
         pdf_input=pdf_input,
@@ -1355,6 +1385,7 @@ def annotate(
         anchors=anchors_model,
         feedback=feedback,
         overall_points=overall_points,
+        student_name=student_label,
     )
     typer.echo(f"Annotated PDF generated → {pdf_output}")
 
@@ -1491,11 +1522,13 @@ def grade(
     if annotate_pdf_flag:
         annotated_path = base_dir / "annotated.pdf"
         feedback, overall_points = _build_feedback_payload(grades)
+        student_label = _resolve_student_label(grades)
         annotate_pdf(
             pdf_input=responses_pdf,
             pdf_output=annotated_path,
             anchors=anchors_model,
             feedback=feedback,
             overall_points=overall_points,
+            student_name=student_label,
         )
         typer.echo(f"Annotated PDF generated → {annotated_path}")
