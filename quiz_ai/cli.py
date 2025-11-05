@@ -43,12 +43,14 @@ from .grading import (
 )
 from .latex import write_latex_from_yaml
 from .llm import DEFAULT_VISION_MODEL, build_openai_client
+from .roster import RosterError
 from .report import (
     GradeSummary,
     build_markdown_report,
     summarise_grade,
     write_summary_csv,
 )
+from .split import SplitError, split_responses_pdf
 from .utils import ensure_directory, read_json, write_json
 
 try:
@@ -515,6 +517,87 @@ def anchors(
 
 
 @app.command()
+def split(
+    responses_pdf: Annotated[
+        Path,
+        typer.Argument(
+            help="Merged PDF containing all student scans.",
+            exists=True,
+            readable=True,
+        ),
+    ],
+    template_pdf: Annotated[
+        Path,
+        typer.Option(
+            "-t",
+            "--template",
+            help="Original exam PDF used to determine per-student page count.",
+            exists=True,
+            readable=True,
+        ),
+    ],
+    output: Annotated[
+        Path,
+        typer.Option(
+            "-o",
+            "--output",
+            help="Directory where the individual PDFs will be written.",
+            file_okay=False,
+        ),
+    ] = Path("split"),
+    prefix: Annotated[
+        Optional[str],
+        typer.Option(
+            "-p",
+            "--prefix",
+            help="Filename prefix for generated PDFs (defaults to responses PDF stem).",
+        ),
+    ] = None,
+    start_index: Annotated[
+        int,
+        typer.Option(
+            "--start",
+            min=1,
+            help="Starting index for generated filenames.",
+        ),
+    ] = 1,
+) -> None:
+    """Split a merged responses PDF into per-student packets."""
+
+    if start_index < 1:
+        raise typer.BadParameter("--start must be >= 1")
+
+    try:
+        result = split_responses_pdf(
+            responses_pdf=responses_pdf,
+            template_pdf=template_pdf,
+            output_dir=output,
+            prefix=prefix,
+            start_index=start_index,
+        )
+    except SplitError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    table = Table(title="Split summary", box=box.SIMPLE_HEAVY, expand=True)
+    table.add_column("Metric", style="cyan", no_wrap=True)
+    table.add_column("Value", justify="right")
+    table.add_row("Responses PDF", str(result.responses_pdf))
+    table.add_row("Template PDF", str(result.template_pdf))
+    table.add_row("Template pages", str(result.template_pages))
+    table.add_row("Total pages", str(result.total_pages))
+    table.add_row("Packets", str(result.packets_written))
+    table.add_row("Leftover pages", str(result.leftovers))
+    typer_console.print(table)
+
+    if result.leftovers:
+        typer_console.print(
+            "[bold yellow]Warning:[/] leftover pages detected; last packet may be incomplete.",
+        )
+
+    typer_console.print(f"[bold green]Output directory[/bold green] : {output.resolve()}")
+
+
+@app.command()
 def analysis(
     responses_pdf: Annotated[
         Optional[Path],
@@ -573,6 +656,15 @@ def analysis(
             readable=True,
         ),
     ] = None,
+    roster_path: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--roster",
+            help="Optional CSV/XLSX roster used to verify handwritten student names.",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
     json_schema: Annotated[
         bool,
         typer.Option(
@@ -619,8 +711,12 @@ def analysis(
                 dpi=dpi,
                 prompt_path=prompt_path or PROMPT_PATH,
                 title_prompt_path=title_prompt_path,
+                roster_path=roster_path,
                 progress=progress_reporter,
             )
+    except RosterError as exc:
+        console.print(f"[bold red]Roster error:[/] {exc}")
+        raise typer.Exit(code=2) from exc
     except KeyboardInterrupt as exc:
         console.print("\n[bold yellow]Analysis interrupted by the user. Partial results saved.[/]")
         console.print(f"[bold]JSON file[/bold] : {analysis_path}")
@@ -684,6 +780,66 @@ def analysis(
 
     console.print()
     console.print(summary_table)
+    metadata = result.metadata if hasattr(result, "metadata") else {}
+    roster_total = 0
+    if isinstance(metadata, dict):
+        roster_total = int(metadata.get("student_roster_total") or 0)
+    if roster_total:
+        roster_table = Table(
+            title="Student Match",
+            box=box.SIMPLE_HEAVY,
+            show_edge=True,
+            expand=True,
+        )
+        roster_table.add_column("Field", style="cyan", no_wrap=True)
+        roster_table.add_column("Value")
+
+        handwritten_name = metadata.get("student_name") if isinstance(metadata, dict) else None
+        roster_table.add_row("Handwritten", handwritten_name or "—")
+
+        matched_name = metadata.get("student_name_roster") if isinstance(metadata, dict) else None
+        roster_table.add_row("Roster match", matched_name or "—")
+
+        confidence = metadata.get("student_name_roster_confidence") if isinstance(metadata, dict) else None
+        score = metadata.get("student_name_roster_score") if isinstance(metadata, dict) else None
+        if isinstance(score, (int, float)):
+            score_text = f"{score:.2f}"
+        else:
+            score_text = "n/a"
+        roster_table.add_row("Confidence", f"{confidence or 'n/a'} (score {score_text})")
+
+        verified = bool(metadata.get("student_name_verified")) if isinstance(metadata, dict) else False
+        roster_table.add_row("Verified", "yes" if verified else "no")
+
+        email_value = metadata.get("student_name_roster_email") if isinstance(metadata, dict) else None
+        if email_value:
+            roster_table.add_row("Email", str(email_value))
+
+        console.print(roster_table)
+
+        candidates = metadata.get("student_name_roster_candidates") if isinstance(metadata, dict) else None
+        if isinstance(candidates, list) and candidates:
+            candidates_table = Table(
+                title="Roster candidates",
+                box=box.MINIMAL_DOUBLE_HEAD,
+                show_edge=True,
+                expand=False,
+            )
+            candidates_table.add_column("Name")
+            candidates_table.add_column("Score", justify="right")
+            candidates_table.add_column("Confidence", justify="right")
+            candidates_table.add_column("Source", justify="right")
+            for candidate in candidates:
+                if not isinstance(candidate, dict):
+                    continue
+                name = candidate.get("name") or "—"
+                score_value = candidate.get("score")
+                score_display = f"{score_value:.2f}" if isinstance(score_value, (int, float)) else "n/a"
+                conf_display = candidate.get("confidence") or "n/a"
+                source_display = candidate.get("source") or "?"
+                candidates_table.add_row(str(name), score_display, str(conf_display), str(source_display))
+            console.print(candidates_table)
+
     console.print(f"[bold green]JSON file[/bold green] : {analysis_path}")
 
 
@@ -1268,6 +1424,15 @@ def grade(
         int,
         typer.Option("--dpi", min=60, max=600, help="Rendering DPI for PDF rasterisation."),
     ] = 220,
+    roster_path: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--roster",
+            help="Optional CSV/XLSX roster used to verify handwritten student names.",
+            exists=True,
+            readable=True,
+        ),
+    ] = None,
 ) -> None:
     """
     Full pipeline: analysis + grading (with optional report/annotation).
@@ -1283,15 +1448,19 @@ def grade(
         raise typer.BadParameter(str(exc)) from exc
 
     client = build_openai_client()
-    run_analysis(
-        responses_pdf=responses_pdf,
-        anchors=anchors_model,
-        output_dir=analysis_dir,
-        client=client,
-        model=model,
-        prompt_path=prompt_path or PROMPT_PATH,
-        dpi=dpi,
-    )
+    try:
+        run_analysis(
+            responses_pdf=responses_pdf,
+            anchors=anchors_model,
+            output_dir=analysis_dir,
+            client=client,
+            model=model,
+            prompt_path=prompt_path or PROMPT_PATH,
+            dpi=dpi,
+            roster_path=roster_path,
+        )
+    except RosterError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     analysis_json = analysis_dir / "analysis.json"
     analysis_data = read_json(analysis_json)
 

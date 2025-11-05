@@ -16,6 +16,7 @@ from PIL import Image
 
 from .anchors import Anchors, extract_anchors, load_anchors
 from .decompose import PdfCutter, RegionCrop
+from .roster import RosterError, StudentRecord, load_roster, match_student_name
 from .llm import (
     DEFAULT_VISION_MODEL,
     build_openai_client,
@@ -70,6 +71,7 @@ class AnalysisResult:
     expected_question_ids: List[int]
     missing_question_ids: List[int]
     ambiguous_question_ids: List[int]
+    metadata: Dict[str, Any]
 
     def __iter__(self) -> Iterable[AnalysisItem]:
         return iter(self.items)
@@ -323,6 +325,7 @@ def run_analysis(
     model: str = DEFAULT_VISION_MODEL,
     dpi: int = 220,
     user_label: Optional[str] = None,
+    roster_path: Optional[Path] = None,
     progress: Optional[ProgressCallback] = None,
 ) -> AnalysisResult:
     """
@@ -384,9 +387,28 @@ def run_analysis(
             "title_page_image": None,
             "title_page_image_full": None,
             "raw_response": "",
+            "student_roster_path": str(roster_path) if roster_path else None,
+            "student_roster_total": 0,
+            "student_name_verified": False,
+            "student_name_roster": "",
+            "student_name_roster_confidence": "",
+            "student_name_roster_score": 0.0,
+            "student_name_roster_first_name": "",
+            "student_name_roster_last_name": "",
+            "student_name_roster_email": "",
+            "student_name_roster_source": "",
+            "student_name_roster_candidates": [],
         },
         "items": [],
     }
+    roster_entries: List[StudentRecord] = []
+    if roster_path:
+        try:
+            roster_records = load_roster(roster_path)
+        except RosterError as exc:
+            raise RosterError(f"Unable to read roster file '{roster_path}': {exc}") from exc
+        aggregated["metadata"]["student_roster_total"] = len(roster_records)
+        roster_entries = roster_records
     analysis_path = output_dir / "analysis.json"
     write_json(analysis_path, aggregated)
 
@@ -437,6 +459,49 @@ def run_analysis(
                 notes = title_metadata.get("notes")
                 if isinstance(notes, str) and notes.strip():
                     metadata_block["notes"] = notes.strip()
+            if roster_entries:
+                candidate_inputs: List[Tuple[str, str]] = []
+                for key in ("student_name", "student_name_raw"):
+                    value = metadata_block.get(key)
+                    if isinstance(value, str) and value.strip():
+                        candidate_inputs.append((value.strip(), key))
+                roster_match = match_student_name(
+                    candidate_inputs,
+                    roster_entries,
+                    threshold=0.0,
+                )
+                if roster_match:
+                    metadata_block["student_name_roster_candidates"] = [
+                        {
+                            "name": candidate.name,
+                            "score": round(candidate.score, 4),
+                            "confidence": candidate.confidence,
+                            "source": candidate.source,
+                        }
+                        for candidate in roster_match.candidates
+                    ]
+                    metadata_block["student_name_roster_source"] = roster_match.source
+                    metadata_block["student_name_roster_score"] = round(roster_match.score, 4)
+                    metadata_block["student_name_roster_confidence"] = roster_match.confidence
+                    matched_student = roster_match.student
+                    if matched_student:
+                        metadata_block["student_name_roster"] = matched_student.display_name()
+                        metadata_block["student_name_roster_first_name"] = matched_student.first_name
+                        metadata_block["student_name_roster_last_name"] = matched_student.last_name
+                        metadata_block["student_name_roster_email"] = matched_student.email or ""
+                        if not metadata_block.get("student_name"):
+                            metadata_block["student_name"] = matched_student.display_name()
+                    metadata_block["student_name_verified"] = roster_match.confidence == "high"
+                    if roster_match.confidence in {"none", "low"}:
+                        roster_note = (
+                            f"Roster match confidence {roster_match.confidence}"
+                            f" (score {roster_match.score:.2f})."
+                        )
+                        existing = metadata_block.get("notes", "")
+                        if isinstance(existing, str) and existing.strip():
+                            metadata_block["notes"] = f"{existing.strip()}; {roster_note}"
+                        else:
+                            metadata_block["notes"] = roster_note
             for key, value in title_usage.items():
                 if key in aggregated["usage"]:
                     aggregated["usage"][key] += int(value)
@@ -715,6 +780,7 @@ def run_analysis(
         expected_question_ids=expected_question_ids,
         missing_question_ids=stats["missing_question_ids"],
         ambiguous_question_ids=sorted(ambiguous_questions),
+        metadata=dict(aggregated["metadata"]),
     )
 
 
@@ -775,6 +841,30 @@ def analysis_output_schema() -> Dict[str, Any]:
                     "title_page_image": {"type": ["string", "null"]},
                     "title_page_image_full": {"type": ["string", "null"]},
                     "raw_response": {"type": "string"},
+                    "student_roster_path": {"type": ["string", "null"]},
+                    "student_roster_total": {"type": "integer", "minimum": 0},
+                    "student_name_verified": {"type": "boolean"},
+                    "student_name_roster": {"type": "string"},
+                    "student_name_roster_confidence": {"type": "string"},
+                    "student_name_roster_score": {"type": "number"},
+                    "student_name_roster_first_name": {"type": "string"},
+                    "student_name_roster_last_name": {"type": "string"},
+                    "student_name_roster_email": {"type": "string"},
+                    "student_name_roster_source": {"type": "string"},
+                    "student_name_roster_candidates": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["name", "score", "confidence", "source"],
+                            "properties": {
+                                "name": {"type": "string"},
+                                "score": {"type": "number"},
+                                "confidence": {"type": "string"},
+                                "source": {"type": "string"},
+                            },
+                            "additionalProperties": False,
+                        },
+                    },
                 },
                 "additionalProperties": True,
             },

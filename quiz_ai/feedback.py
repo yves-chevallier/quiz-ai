@@ -63,6 +63,12 @@ def resolve_student_name(
     meta_name = str(metadata.get("student_name") or "").strip()
     if meta_name:
         candidates.append(meta_name)
+    roster_name = str(metadata.get("student_name_roster") or "").strip()
+    if roster_name:
+        if metadata.get("student_name_verified"):
+            candidates.insert(0, roster_name)
+        else:
+            candidates.append(roster_name)
     raw_name = str(metadata.get("student_name_raw") or "").strip()
     if raw_name:
         candidates.append(raw_name)
