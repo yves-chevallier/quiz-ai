@@ -135,3 +135,4 @@ If an MCQ shows a printed circle with an X drawn across it and a faint outer cir
   ```
 
   the expected sequence is `A, B, C, D, E, F`.
+* When a `PRINTED CHOICES` section is provided in the prompt, reuse those exact strings and that order. Do not rewrite or reorder the text you report.

@@ -20,6 +20,7 @@ from rich.panel import Panel
 from rich.progress_bar import ProgressBar
 from rich.table import Table
 from rich.text import Text
+from rich.traceback import install as install_rich_traceback
 
 from .analysis import (
     PROMPT_PATH,
@@ -68,6 +69,8 @@ app = typer.Typer(
     help="CLI tools to convert, analyse, and grade scanned quizzes.",
     no_args_is_help=True,
 )
+
+install_rich_traceback(show_locals=False)
 
 
 def _format_duration(seconds: float) -> str:
@@ -727,8 +730,10 @@ def analysis(
         raise typer.BadParameter(str(exc)) from exc
 
     question_text_map: Optional[Dict[int, str]] = None
+    question_choices_map: Optional[Dict[int, List[str]]] = None
     if quiz_yaml:
         question_text_map = _question_text_map_from_yaml(quiz_yaml)
+        question_choices_map = _question_choices_map_from_yaml(quiz_yaml)
 
     question_filter_set: Optional[Set[int]] = set(int(q) for q in only_questions) if only_questions else None
 
@@ -751,6 +756,7 @@ def analysis(
                 temperature=temperature,
                 question_filter=question_filter_set,
                 question_text_map=question_text_map,
+                question_choices_map=question_choices_map,
                 roster_path=roster_path,
                 progress=progress_reporter,
             )
@@ -913,7 +919,7 @@ def grading(
     model: Annotated[
         str,
         typer.Option("--model", help="OpenAI model to use for grading."),
-    ] = DEFAULT_VISION_MODEL,
+    ] = DEFAULT_GRADING_MODEL,
     prompt_path: Annotated[
         Optional[Path],
         typer.Option(
@@ -941,6 +947,21 @@ def grading(
     solution_questions = solution.questions
     labels_map = {qid: entry.get("label", "") for qid, entry in solution_questions.items()}
 
+    def _progress(qid: int, total: int, info: Optional[Dict[str, Any]]) -> None:
+        label = labels_map.get(qid) or f"Question {qid}"
+        stage = (info or {}).get("stage")
+        if stage == "start":
+            typer_console.print(f"[cyan]Grading Q{qid}[/cyan] • {label}")
+        elif stage == "complete":
+            ratio = info.get("awarded_ratio")
+            status = info.get("status")
+            confidence = info.get("confidence")
+            ratio_display = f"{ratio:.1f}%" if isinstance(ratio, (int, float)) else str(ratio or "?")
+            typer_console.print(
+                f"  → status: [bold]{status or '?'}[/bold], "
+                f"ratio: {ratio_display}, confidence: {confidence or '?'}"
+            )
+
     grades = run_grading(
         analysis=analysis_data,
         solution=solution,
@@ -948,6 +969,7 @@ def grading(
         model=model,
         user_label=user_label,
         prompt_path=prompt_path,
+        progress_callback=_progress,
     )
 
     points_mapping = solution_points_map(solution)
@@ -1370,7 +1392,14 @@ def _resolve_student_label(grades: Dict[str, Any]) -> Optional[str]:
     official_name = str(student_block.get("name") or "").strip() if isinstance(student_block, dict) else ""
 
     if roster_name:
-        if handwritten_name and _norm(roster_name) != _norm(handwritten_name):
+        roster_norm = _norm(roster_name)
+        handwritten_norm = _norm(handwritten_name)
+        if handwritten_name and roster_norm and handwritten_norm:
+            if roster_norm == handwritten_norm:
+                return roster_name
+            swapped = " ".join(reversed(handwritten_name.split()))
+            if _norm(swapped) == roster_norm:
+                return roster_name
             return f"{roster_name} (lu: {handwritten_name})"
         return roster_name
 
@@ -1405,6 +1434,30 @@ def _question_text_map_from_yaml(path: Path) -> Dict[int, str]:
         question_text = entry.get("question")
         if isinstance(question_text, str) and question_text.strip():
             mapping[qid] = question_text.strip()
+    return mapping
+
+
+def _question_choices_map_from_yaml(path: Path) -> Dict[int, List[str]]:
+    data = read_yaml(path)
+    if not isinstance(data, dict):
+        return {}
+    questions = data.get("questions")
+    if not isinstance(questions, list):
+        return {}
+    mapping: Dict[int, List[str]] = {}
+    for idx, entry in enumerate(questions, start=1):
+        if not isinstance(entry, dict):
+            continue
+        raw_id = entry.get("id")
+        if isinstance(raw_id, int):
+            qid = raw_id
+        elif isinstance(raw_id, str) and raw_id.strip().isdigit():
+            qid = int(raw_id.strip())
+        else:
+            qid = idx
+        choices = entry.get("choices")
+        if isinstance(choices, list):
+            mapping[qid] = [str(choice) for choice in choices]
     return mapping
 
 
@@ -1583,6 +1636,7 @@ def grade(
 
     client = build_openai_client()
     question_text_map = _question_text_map_from_yaml(quiz_yaml)
+    question_choices_map = _question_choices_map_from_yaml(quiz_yaml)
     try:
         run_analysis(
             responses_pdf=responses_pdf,
@@ -1594,6 +1648,7 @@ def grade(
             dpi=dpi,
             temperature=0.0,
             question_text_map=question_text_map,
+            question_choices_map=question_choices_map,
             roster_path=roster_path,
         )
     except RosterError as exc:

@@ -1,0 +1,86 @@
+% overlay-shapes.tex
+\documentclass[a4paper]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,calc}
+\pagestyle{empty}
+
+% --- Mode de sortie : traits vs remplissage ---
+% Par défaut: contours uniquement (pdf1).
+% Pour "remplissage uniquement", compile avec:
+%   pdflatex "\def\FILL{}\input{overlay-shapes.tex}"
+\newif\iffillonly
+\ifdefined\FILL
+  \fillonlytrue
+\fi
+
+% Tailles des formes
+\def\Size{2.2cm}      % pdf1 : grand contour
+\def\InnerSize{1.3cm} % pdf2 : plus petit, rempli
+
+% Styles selon le mode
+\iffillonly
+  \tikzset{shapeStyle/.style={draw=none, fill=black}}
+\else
+  \tikzset{shapeStyle/.style={draw=black, fill=none, line width=1pt}}
+\fi
+
+% ---------- Numérotation ----------
+\newcommand{\CenterNumber}[1]{%
+  \node at (current page.center) {\fontsize{160}{0}\selectfont #1};
+}
+\newcommand{\EdgeNumbers}[1]{%
+  \node at ($(current page.north)+(0,-8mm)$) {#1}; % haut
+  \node at ($(current page.south)+(0, 8mm)$) {#1}; % bas
+  \node at ($(current page.west) +( 8mm,0)$) {#1}; % gauche
+  \node at ($(current page.east) +(-8mm,0)$) {#1}; % droite
+}
+
+% Commande pour dessiner une page
+\newcommand{\DrawPage}[1]{%
+  \clearpage
+  \thispagestyle{empty}
+  \begin{tikzpicture}[remember picture, overlay]
+    % Positions (marges intérieures de 1.5 cm)
+    \def\TL{([xshift=1.5cm,yshift=-1.5cm]current page.north west)}   % haut gauche
+    \def\BR{([xshift=-1.5cm,yshift=1.5cm]current page.south east)}   % bas droite
+
+    % ===== Formes =====
+    % Impaires : cercle (TL) + triangle (BR)
+    % Paires   : carré (TL)  + octogone (BR)
+    \ifodd#1
+      \iffillonly
+        \node[circle, minimum size=\InnerSize, shapeStyle] at \TL {};
+        \node[regular polygon, regular polygon sides=3, minimum size=\InnerSize, shapeStyle] at \BR {};
+      \else
+        \node[circle, minimum size=\Size, shapeStyle] at \TL {};
+        \node[regular polygon, regular polygon sides=3, minimum size=\Size, shapeStyle] at \BR {};
+      \fi
+    \else
+      \iffillonly
+        \node[regular polygon, regular polygon sides=4, minimum size=\InnerSize, shapeStyle] at \TL {};
+        \node[regular polygon, regular polygon sides=8, minimum size=\InnerSize, shapeStyle] at \BR {};
+      \else
+        \node[regular polygon, regular polygon sides=4, minimum size=\Size, shapeStyle] at \TL {};
+        \node[regular polygon, regular polygon sides=8, minimum size=\Size, shapeStyle] at \BR {};
+      \fi
+    \fi
+
+    % ===== Numéros =====
+    \iffillonly
+      \EdgeNumbers{#1}    % pdf2 : numéros sur les arêtes
+    \else
+      \CenterNumber{#1}   % pdf1 : gros numéro au centre
+    \fi
+  \end{tikzpicture}
+  \vfill
+}
+
+\begin{document}
+\DrawPage{1}
+\DrawPage{2}
+\DrawPage{3}
+\DrawPage{4}
+\end{document}

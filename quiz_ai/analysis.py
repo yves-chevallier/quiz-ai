@@ -106,10 +106,45 @@ def _parse_response_json(raw_text: str) -> Optional[object]:
     """
     if not raw_text:
         return None
+    text = raw_text.strip()
+    if text.startswith("```"):
+        first_newline = text.find("\n")
+        if first_newline != -1:
+            text = text[first_newline + 1 :]
+        stripped = text.rstrip()
+        closing_marker = "\n```"
+        closing_index = stripped.rfind(closing_marker)
+        if closing_index != -1 and stripped[closing_index:].strip() == "```":
+            text = stripped[:closing_index].strip()
     try:
-        return json.loads(raw_text)
+        return json.loads(text)
     except json.JSONDecodeError:
         return None
+
+
+def _apply_official_choices(structured: object, official_choices: Sequence[str]) -> None:
+    """
+    Ensure the structured payload reuses the official choice texts/order.
+    """
+    if not official_choices or structured is None:
+        return
+
+    def _rewrite(node: object) -> None:
+        if isinstance(node, dict):
+            choices = node.get("choices")
+            if isinstance(choices, list):
+                for index, choice in enumerate(choices):
+                    if not isinstance(choice, dict):
+                        continue
+                    if index < len(official_choices):
+                        choice["text"] = official_choices[index]
+            for value in node.values():
+                _rewrite(value)
+        elif isinstance(node, list):
+            for item in node:
+                _rewrite(item)
+
+    _rewrite(structured)
 
 
 def _utc_now_iso() -> str:
@@ -329,6 +364,7 @@ def run_analysis(
     temperature: Optional[float] = None,
     question_filter: Optional[Set[int]] = None,
     question_text_map: Optional[Dict[int, str]] = None,
+    question_choices_map: Optional[Dict[int, List[str]]] = None,
     roster_path: Optional[Path] = None,
     progress: Optional[ProgressCallback] = None,
 ) -> AnalysisResult:
@@ -684,10 +720,20 @@ def run_analysis(
             )
             effective_prompt = prompt_text
             if question_text_map and crop.question_id in question_text_map:
-                effective_prompt = (
-                    f"{prompt_text}\n\n---\nPRINTED QUESTION TEXT:\n"
-                    f"{question_text_map[crop.question_id]}"
-                )
+                extra_sections: List[str] = [
+                    f"PRINTED QUESTION TEXT:\n{question_text_map[crop.question_id]}"
+                ]
+                if question_choices_map and crop.question_id in question_choices_map:
+                    formatted_choices = "\n".join(
+                        f"{idx}. {choice}"
+                        for idx, choice in enumerate(
+                            question_choices_map[crop.question_id], start=1
+                        )
+                    )
+                    extra_sections.append(
+                        "PRINTED CHOICES (top-to-bottom, then left-to-right):\n" + formatted_choices
+                    )
+                effective_prompt = f"{prompt_text}\n\n---\n" + "\n\n---\n".join(extra_sections)
             response = call_vision(
                 client,
                 prompt=effective_prompt,
@@ -698,6 +744,8 @@ def run_analysis(
             )
             raw_text = getattr(response, "output_text", None) or ""
             parsed = _parse_response_json(raw_text)
+            if parsed is not None and question_choices_map and crop.question_id in question_choices_map:
+                _apply_official_choices(parsed, question_choices_map[crop.question_id])
             question_kind = _extract_question_kind(parsed)
             summary_text = _extract_summary_text(parsed, raw_text)
             usage = _extract_usage(response)
