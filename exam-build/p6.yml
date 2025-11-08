@@ -1,0 +1,20 @@
+question:
+  title: Résolution équation quadratique
+  question: |
+    L'équation quadratique dit de Viète permet de résoudre l'équation suivante :
+
+    $$
+    {{A}}x^2 + {{B}}x + {{C}} = 0
+    $$
+
+    Résoudre cette équation en C en utilisant la formule :
+
+    $$
+    x = \frac{-B \pm \sqrt{B^2 - 4AC}}{2A}
+    $$
+  lines: 1
+  solution: |
+    Les solutions de $x_1$, $x_2$ sont : {{x1}}, {{x2}}
+  # Le générateur est appelé avec comme argument le seed (entier)
+  # Il retourne un dictionnaire JSON compatible JINJA
+  generator: quad.py

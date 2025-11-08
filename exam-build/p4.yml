@@ -1,0 +1,59 @@
+question:
+  title: "Structures de contrôle"
+  type: short_answer
+  points: 10
+  question: |
+      Donnez les valeurs affichées sur `stdout` pour chaque fragment de code C suivant :
+  parts:
+    - question: |
+        ```c
+        int s = 1;
+        while (s < 20) {
+            printf("%d ", s);
+            s <<= 1;
+        }
+        ```
+      lines: 1
+      solution: "`1 2 4 8 16 `"
+    - question: |
+        ```c
+        for (int i = 5; i > 0; --i) {
+            if (i % 2 == 0) continue;
+            printf("%d", i);
+        }
+        ```
+      lines: 1
+      solution: "`531`"
+    - question: |
+        ```c
+        int total = 0;
+        for (int i = 1; i <= 3; ++i) {
+            for (int j = i; j <= 3; ++j) {
+                total += j;
+            }
+        }
+        printf("%d", total);
+        ```
+      lines: 1
+      solution: "`18`"
+    - question: |
+        ```c
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                if (i == j) break;
+                 printf("%d%d ", i, j);
+             }
+         }
+         ```
+      solution: "`01 02 10 12 20 `"
+    - question: |
+        ```c
+        int i = 1, t = 0;
+        do {
+            t += i;
+            printf("%d;", t);
+            i += 2;
+        } while (t < 15);
+        ```
+      lines: 1
+      solution: "`1;4;9;16;`"

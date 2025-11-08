@@ -1,0 +1,68 @@
+question:
+  title: "Syntaxe"
+  parts:
+    - title: Identificateurs
+      type: short_answer
+      points: 5
+      question: |
+        Pour chacun des identificateurs suivants, indiquez s'ils sont corrects selon le standard C.
+        S'ils sont invalides, proposez un nom compatible en C (ASCII, lettres/chiffres et `_` uniquement).
+      subparts:
+        - question: "`résumé`"
+          lines: 1
+          solution: |
+            `résumé` est **Incorrect** (accent). Proposition : `resume` ou `summary`.
+        - question: "`_AMountain_`"
+          lines: 1
+          solution: |
+            `_AMountain_` est **Correct**.
+        - question: "`while`"
+          lines: 1
+          solution: |
+            `while` est **Incorrect** car mot-clé réservé. Proposition : `case_value`, `while_loop`, etc.
+        - question: "`std99`"
+          lines: 1
+          solution: |
+            `std99` est **Correct**.
+        - question: "`data-stream`"
+          lines: 1
+          solution: |
+            `data-stream` est **Incorrect** (tiret). Proposition : `data_stream`.
+      instructions: |
+        - Accepter les termes alternatifs comme "ok", "valide", "non", "invalide", etc.
+        - Pour les cas incorrects, vérifier que la proposition respecte les règles de
+          nommage en C.
+        - Ne pas accepter les mots clés du langage C comme propositions valides.
+        - Accepter les variantes avec accents si correctement justifiées.
+
+    - title: Constantes littérales
+      type: short_answer
+      points: 5
+      question: |
+        Pour chaque constante littérale suivante, indiquez si elle est **correcte** et,
+        si applicable, précisez le **type** associé.
+      subparts:
+        - question: "`42uL`"
+          lines: 1
+          solution: |
+            `42uL` : Correct, type `unsigned long int`.
+        - question: "`0758`"
+          lines: 1
+          solution: |
+            `0758` : Incorrect (les littéraux octaux n'acceptent pas 8 ou 9).
+        - question: "`.128f`"
+          lines: 1
+          solution: |
+            `.128f` : Correct, type `float`.
+        - question: "`'\\x41'`"
+          lines: 1
+          solution: |
+            `'\\x41'` : Correct, type `char`.
+        - question: "`0b00001010`"
+          lines: 1
+          solution: |
+            `0b00001010` : Correct à partir de C23 (`int`).
+      instructions: |
+        - Accepter les types alternatifs ou équivalents type uint32_t, etc.
+        - Compter la moitié des points si le candidat indique la validité mais pas le type.
+        - Accepter que la mention de la version du standard ne soit pas donnée.

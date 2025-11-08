@@ -1,0 +1,36 @@
+schema_version: "1.0"
+meta:
+  title: Travail écrit Info1-TIN-B
+  subtitle: TE-01
+  author: Prof. Yves Chevallier
+  date: "2025-11-04"
+  language: fr
+  directives:
+    - "Écrire votre nom et votre prénom sur la première page."
+    - "Écrire lisiblement, au stylo ou au crayon à papier gras."
+    - "Répondre aux questions dans les espaces appropriés."
+    - "Relire toutes vos réponses avant de rendre votre travail."
+    - "Rendre toutes les feuilles de ce travail écrit."
+    - "Les réponses données sur les feuilles de brouillon ne sont pas acceptées."
+    - "Aucun moyen de communication autorisé."
+    - "Toutes les réponses concernent le langage C (standard C20)."
+  randomization:
+    # Seed for randomization to ensure reproducibility
+    seed: 12345
+    # Questions does not appear in the same order for each student
+    shuffle_questions: false
+    # When having multiple-choice questions, the choices do not appear in the same order for each student
+    shuffle_choices: false
+    shuffle_parts: false
+    shuffle_subparts: false
+  grading:
+    default_points: 10
+    negative_points: false
+    partial_credit: "rubric"
+questions:
+  - include: p1.yml
+  - include: p2.yml
+  - include: p3.yml
+  - include: p4.yml
+  - include: p5.yml
+  - include: p6.yml

@@ -1,0 +1,76 @@
+question:
+  title: "Entrées et sorties"
+  parts:
+    - title: "Entrées avec `printf`"
+      type: short_answer
+      points: 5
+      question: |
+        Pour les appels de fonction `printf` suivants, indiquez l'affichage exact
+        produit sur *stdout* ou, en cas d'erreur, la nature de cette dernière.
+        Représentez la sortie dans l'espace approprié, un caractère par case.
+        Utilisez la notation des caractères d'échappement du langage C pour
+        les caractères non imprimables (p.ex. `\n`).
+        Terminez chaque sortie par une croix sur toute la case.
+
+        Considérez les états des variables suivants:
+
+        ```c
+        short s = -27;
+        unsigned char uc = 201;
+        char c = 'c'; // Valeur ASCII de 'c': 99
+        double x = 2.71828;
+        ```
+      subparts:
+        - question: |
+            `printf("|0x%05x|\\n", uc);`
+          solution: |
+            `|0x000c9|\n`
+        - question: |
+            `printf("%+7.2f\\n", s / 2.0);`
+          solution: |
+            ` -13.50\n`
+        - question: |
+            `printf("%c%c%c%c %hhd", c, c - 2, 'a' + 2, 97, c);`
+          solution: |
+            `caca 99`
+        - question: |
+            `printf(">%-06.1f<", x);`
+          solution: |
+            `>0002.7<`
+        - question: |
+            `printf("%-*.*f%d\\n", 7, 3, 5.4321, 42);`
+          solution: |
+            `5.432  42`
+
+    - title: "Entrées avec `sscanf`"
+      type: short_answer
+      points: 5
+      question: |
+        Soient les déclarations suivantes :
+
+        ```c
+        int r = 0, n = 0, m = 0;
+        double y = 0.0;
+        char ch = '0';
+        ```
+
+        Pour les appels `sscanf` ci-dessous, indiquez:
+
+        1. la valeur des variables affectées;
+        2. la valeur de retour de `r`.
+      subparts:
+        - question: |
+            `r = sscanf("  -15 0x1f", "%d %i", &n, &m);`
+          solution: n = -15, m = 31, r = 2
+        - question: |
+            `r = sscanf("42kg", "%2d%c", &n, &ch);`
+          solution: n = 42, ch = 'k', r = 2
+        - question: |
+            `r = sscanf("0.75,12", "%lf,%d", &y, &n);`
+          solution: y = 0.75, n = 12, r = 2
+        - question: |
+            `r = sscanf("abc", "%d", &n);`
+          solution: n = 0, r = 0
+        - question: |
+            `r = sscanf("9.82", "%d %d", &n, &m);`
+          solution: n = 9, m = 82, r = 2

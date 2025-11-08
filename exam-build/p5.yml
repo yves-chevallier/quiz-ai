@@ -1,0 +1,65 @@
+question:
+  title: "Programmation"
+  type: code
+  points: 10
+  question: |
+    Écrire un programme complet en C qui calcule la résistance équivalente d'un
+    réseau de `N` résistances montées en parallèle, selon :
+
+    $$
+    R_{\mathrm{eq}} = \left(\frac{1}{R_1} + \frac{1}{R_2} + \cdots + \frac{1}{R_N}\right)^{-1}
+    $$
+
+    - Les valeurs sont fournies via les arguments de la ligne de commande (`argv[1..N]`).
+    - Toute valeur manquante, nulle ou négative doit provoquer un message
+      d'erreur et un code de retour non nul.
+    - Vous pouvez utiliser `sscanf` pour valider les entrées.
+
+    Exemples d'exécution :
+
+    ```bash
+    $ ./parallel 120 220 330
+    54.6796
+    $ ./parallel 100 100 100 100 100
+    20.0
+    $ ./parallel 47 -10 10
+    Error: Invalid resistance values
+    ```
+  lines: 1 page
+  instructions: |
+    - 2 points sont donnés pour les includes corrects
+    - 1 point donné pour la structure du `main` avec les bons paramètres
+    - 1 point pour les valeurs de retour et les tests d'erreur
+    - 2 points pour la boucle de traitement des arguments
+    - 2 points pour le calcul correct de la résistance équivalente
+    - 1 point pour l'affichage du résultat dans le format demandé
+    - 1 point si le programme compile après avoir corrigé les erreurs de syntaxe
+      (;, accolades, etc.)
+  solution: |
+    ```c
+    #include <stdio.h>
+    #include <stdlib.h>
+
+    int main(int argc, char *argv[]) {
+        if (argc < 2) {
+            fprintf(stderr, "Usage: %s R1 R2 ...\n", argv[0]);
+            return 1;
+        }
+        double inv_sum = 0.0;
+        for (int i = 1; i < argc; ++i) {
+            double r = 0.0;
+            if (sscanf(argv[i], "%lf", &r) != 1 || r <= 0.0) {
+                fprintf(stderr, "Error: Invalid resistance values\n");
+                return 1;
+            }
+            inv_sum += 1.0 / r;
+        }
+        if (inv_sum == 0.0) {
+            fprintf(stderr, "Error: Invalid resistance values\n");
+            return 1;
+        }
+        double req = 1.0 / inv_sum;
+        printf("%g\n", req);
+        return 0;
+    }
+    ```
