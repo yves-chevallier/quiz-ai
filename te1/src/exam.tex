@@ -1,0 +1,88 @@
+\documentclass[french,a4paper,addpoints,11pt]{exam}
+\usepackage{fontspec}
+\usepackage[french]{babel}
+\usepackage{hexam}
+\usepackage{bashful}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\makeatletter
+\renewcommand{\questionlabel}{%
+  \Hy@raisedlink{\hypertarget{Q\thequestion-anchor}{}}%
+  \thequestion.
+}
+\renewcommand{\partlabel}{%
+  \Hy@raisedlink{\hypertarget{part@\arabic{question}@\arabic{partno}-anchor}{}}%
+  (\thepartno)
+}
+\renewcommand{\subpartlabel}{%
+  \Hy@raisedlink{\hypertarget{subpart@\arabic{question}@\arabic{partno}@\arabic{subpart}-anchor}{}}%
+  \thesubpart.
+}
+\newcommand{\questionanchorhere}[1][]{%
+  \Hy@raisedlink{\hypertarget{Q\thequestion#1-anchor}{}}%
+}
+\makeatother
+
+\lstMakeShortInline|
+\pointsdroppedatright
+\renewcommand{\checkboxeshook}{%
+  \settowidth{\leftmargin}{W.}%
+  \labelwidth\leftmargin\advance\labelwidth-\labelsep%
+}
+\renewcommand{\partshook}{\setlength{\itemsep}{1em}}
+
+\setlength{\gridsize}{5mm}
+\setlength{\gridlinewidth}{0.1pt}
+\colorgrids
+\definecolor{GridColor}{gray}{0.5}
+\definecolor{FillWithDottedLinesColor}{gray}{0.5}
+
+\thispagestyle{empty}
+
+\title{Travail écrit Info1-TIN-B\\TE-01}
+
+\author{Prof. Yves Chevallier}
+\department{Département TIN}
+\school{Haute École d'Ingénierie et de Gestion du Canton de Vaud}
+
+\date{4 novembre 2025}
+
+\begin{document}
+
+\begin{coverpages}
+    \maketitle
+    \thispagestyle{empty}
+
+    \begin{center}
+        \vskip 2em
+        \gradetable
+    \end{center}
+
+    \vspace{0.1in}
+
+    \fbox{\fbox{\parbox{5.5in}{
+                \textbf{Consignes :}
+                \vskip 1em%
+                \begin{itemize}
+                    \item Écrire votre \textbf{nom} et votre \textbf{prénom} sur la première page.
+                    \item Écrire \textbf{lisiblement}, au stylo ou au crayon à papier gras.
+                    \item Répondre aux questions dans les espaces appropriés.
+                    \item Relire toutes vos réponses avant de rendre votre travail.
+                    \item Rendre toutes les feuilles de ce travail écrit.
+                    \item Les réponses données sur les feuilles de brouillon ne sont \textbf{pas acceptées}.
+                    \item Aucun moyen de communication autorisé.
+                    \item Toutes les réponses concernent le langage C et son standard C20.
+                \end{itemize}
+            }}}
+
+\end{coverpages}
+\setcounter{page}{2}
+\begin{questions}
+    \input{problem1.tex}
+    \input{problem2.tex}
+    \input{problem3.tex}
+    \input{problem4.tex}
+    \input{problem5.tex}
+\end{questions}
+\end{document}

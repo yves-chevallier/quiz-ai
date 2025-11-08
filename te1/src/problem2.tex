@@ -1,0 +1,55 @@
+\clearpage
+\noaddpoints
+\titledquestion{Syntaxe}[\totalpoints]
+\addpoints
+
+\setlength\answerlinelength{8cm}
+
+\begin{parts}
+
+    \part
+    Pour chacun des identificateurs suivants, indiquez s'ils sont corrects selon le standard C, et si non, proposez un nom compatible en C.
+    \begin{subparts}
+
+        \subpart[1] |résumé|
+        \answerline[\textbf{Incorrect} en raison de l'accent. \\ Proposition \lstinline{summary}.]
+
+        \subpart[1] |_AMountain_|
+        \answerline[\textbf{Correct}.]
+
+        \subpart[1] \texttt{while}
+        \answerline[\textbf{Incorrect} : mot clé du langage. \\ Proposition \lstinline{case_value}.]
+
+        \subpart[1] |std99|
+        \answerline[\textbf{Correct}.]
+
+        \subpart[1] |data-stream|
+        \answerline[\textbf{Incorrect} : le tiret n'est pas permis. \\ Proposition \lstinline{data_stream}.]
+
+\end{subparts}
+
+\questionanchorhere[-break]
+
+    \part
+
+    Pour chaque constante littérale suivante, indiquez si elle est \textbf{correcte} et, si applicable, précisez le \textbf{type} associé.
+
+    \begin{subparts}
+        \subpart[1] |42uL|
+        \answerline[\textbf{Correct}, \lstinline{unsigned long int}.]
+
+        \subpart[1] |0758|
+        \answerline[\textbf{Incorrect} : la base octale ne permet pas le chiffre \lstinline{8}.]
+
+        \subpart[1] |.128f|
+        \answerline[\textbf{Correct}, \lstinline{float}.]
+
+        \subpart[1] |'\x41'|
+        \answerline[\textbf{Correct}, \lstinline{char}.]
+
+        \subpart[1] |0b00001010|
+        \answerline[\textbf{Correct}, mais à partir de C23, \lstinline{int}.]
+    \end{subparts}
+
+\questionanchorhere[-end]
+\end{parts}

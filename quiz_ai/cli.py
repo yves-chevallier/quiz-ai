@@ -498,8 +498,11 @@ def anchors(
     ] = 3.0,
     pattern: Annotated[
         str,
-        typer.Option("--pattern", help="Regular expression selecting anchors."),
-    ] = r"^Q(\d+)-anchor$",
+        typer.Option(
+            "--pattern",
+            help="Regular expression selecting anchors (default captures questions, parts, subparts, and custom suffixes).",
+        ),
+    ] = r"^(?:Q|part@|subpart@)(\d+).*?-anchor$",
     include_bottom: Annotated[
         bool,
         typer.Option(

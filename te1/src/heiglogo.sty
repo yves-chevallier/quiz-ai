@@ -1,0 +1,112 @@
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{heiglogo}[2022/09/09 HEIG-VD Logo]
+\RequirePackage{tikz}
+
+\def\logotext{Centre \\ Ra\&D}
+
+\newcommand{\logoimg}[2]{
+    \begin{tikzpicture}[x=0.7pt,y=0.7pt]%\begin{pspicture}(#1,-#2)
+        \definecolor{curcolor}{rgb}{0.88,0.15,0.11}
+        \definecolor{white}{rgb}{1,1,1}
+        \fill[curcolor]
+            (74, 18)
+            -- (56, 18)
+            -- (56, 12)
+            -- (68, 12)
+            -- (68, 12)
+            .. controls (67, 7) and (63, 5) .. (57, 5)
+            .. controls (50, 5) and (45, 10) .. (45, 17)
+            .. controls (45, 24) and (50, 30) .. (57, 30)
+            .. controls (63, 30) and (67, 27) .. (69, 23)
+            -- (74, 25)
+            .. controls (71, 32) and (65, 35) .. (57, 35)
+            .. controls (47, 35) and (39, 27) .. (39, 17)
+            .. controls (39, 7) and (47, 0) .. (57, 0)
+            .. controls (62, 0) and (66, 2) .. (69, 5)
+            -- (69, 1)
+            -- (74, 1)
+            -- (74, 17)
+            -- cycle
+            ;
+        \fill[curcolor]
+            (74, 47)
+            -- (46, 47)
+            -- (46, 56)
+            -- (70, 56)
+            -- (70, 61)
+            -- (46, 61)
+            -- (46, 70)
+            -- (74, 70)
+            -- (74, 75)
+            -- (40, 75)
+            -- (40, 42)
+            -- (74, 42)
+            -- cycle
+            ;
+        \fill[curcolor]
+            (27, 61)
+            -- (5, 61)
+            -- (5, 75)
+            -- (0, 75)
+            -- (0, 42)
+            -- (5, 42)
+            -- (5, 56)
+            -- (27, 56)
+            -- (27, 42)
+            -- (33, 42)
+            -- (33, 75)
+            -- (27, 75)
+            -- cycle
+            ;
+        \fill[curcolor]
+            (19, 6)
+            -- (19, 29)
+            -- (33, 29)
+            -- (33, 34)
+            -- (-0, 34)
+            -- (-0, 29)
+            -- (13, 29)
+            -- (13, 6)
+            -- (-0, 6)
+            -- (-0, 1)
+            -- (33, 1)
+            -- (33, 6)
+            -- cycle;
+        \fill[curcolor]
+            (88, 75)
+            -- (90, 75)
+            -- (87, 65)
+            -- (85, 65)
+            -- (81, 75)
+            -- (83, 75)
+            -- (86, 68)
+            -- cycle;
+        \fill[curcolor]
+            (92, 65)
+            -- (92, 75)
+            -- (95, 75)
+            .. controls (98, 75) and (100, 73) .. (100, 70)
+            .. controls (100, 67) and (98, 65) .. (95, 65)
+            -- cycle;
+        \fill[white]
+            (95, 67)
+            .. controls (97, 67) and (98, 68) .. (98, 70)
+            .. controls (98, 72) and (97, 73) .. (95, 73)
+            -- (94, 73)
+            -- (94, 67)
+            -- cycle;
+        % \fill[curcolor]
+        %     (115, 1)
+        %     -- (114, 1)
+        %     -- (114, 75)
+        %     -- (115, 75)
+        %     -- cycle
+        %     ;
+    \end{tikzpicture}
+}
+
+\newcommand{\logo}[2]{% \logo{<left>}{<top>}
+    \begin{tikzpicture}[remember picture,overlay, align=center,]
+        \node(logo) at ([xshift=#1, yshift=-#2] current page.north west)
+        [anchor=north west] {\logoimg{#1}{#2}};
+    \end{tikzpicture}\vspace*{-\baselineskip}}

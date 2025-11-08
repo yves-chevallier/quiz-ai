@@ -1,0 +1,74 @@
+\clearpage
+
+\titledquestion{Programmation}[10]
+
+Écrire un programme complet en C permettant de calculer la résistance équivalente d'un réseau de N résistances montées en parallèle, selon la formule suivante:
+
+\[
+R_{\mathrm{eq}} = \left(\frac{1}{R_1} + \frac{1}{R_2} + \frac{1}{R_3} + \cdots\right)^{-1}
+\]
+
+\begin{center}
+\begin{circuitikz}
+  \ctikzset{resistor = european}
+
+  \draw (0,3) node[ocirc,label=left:$A$]{} -- (8,3); % rail haut (A)
+  \draw (0,0) node[ocirc,label=left:$B$]{} -- (8,0); % rail bas  (B)
+
+  \draw (2,3) to[R,l_=$R_1$,*-*] (2,0);
+  \draw (4,3) to[R,l_=$R_2$,*-*] (4,0);
+  \draw (6,3) to[R,l_=$R_3$,*-*] (6,0);
+\end{circuitikz}
+\end{center}
+
+Les grandeurs sont passées au programme au moyen des arguments de la ligne de commande. Le programme exécuté avec 5 résistances recevra donc 6 arguments: le nom du programme suivi des 5 valeurs des résistances.
+
+Le programme doit être \textbf{robuste}, c'est-à-dire détecter les entrées incorrectes et ne pas \emph{planter}. Toute valeur manquante, nulle ou négative constitue une entrée invalide.
+
+Vous pouvez vous aider de \lstinline{sscanf} pour valider les données.
+
+Voici un exemple de fonctionnement:
+
+\begin{code}{bash}{}
+$ ./parallel 120 220 330
+54.6796
+$ ./parallel 100 100 100 100 100
+20.0
+$ echo $?
+0
+$ ./parallel 47 -10 10
+Error: Invalid resistance values
+$ echo $?
+1
+\end{code}
+
+\begin{solutionordottedlines}[\stretch{1}]
+\begin{lstlisting}
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+    double inv_sum = 0.0;
+    for (int i = 1; i < argc; ++i) {
+        if (argv[i] == NULL) {
+            printf("Paramètres invalides\n");
+            return 1;
+        }
+        double r;
+        if (sscanf(argv[i], "%lf", &r) != 1 || r <= 0) {
+            printf("Paramètres invalides\n");
+            return 1;
+        }
+        inv_sum += 1.0 / r;
+    }
+
+    double req = 1.0 / inv_sum;
+    printf("%g\n", req);
+}
+\end{lstlisting}
+\end{solutionordottedlines}
+
+\ifprintanswers
+\else
+    \clearpage
+    \fillwithdottedlines{\stretch{1}}
+\fi

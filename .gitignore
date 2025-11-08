@@ -11,3 +11,4 @@ anchors.json
 out/
 quiz_ai/assets/fonts/*.ttf
 venv/
+_minted-*/

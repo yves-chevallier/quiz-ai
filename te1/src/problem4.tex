@@ -1,0 +1,58 @@
+\clearpage
+\noaddpoints
+\titledquestion{Structures de contrôle}[\totalpoints]
+\addpoints
+
+Donnez les valeurs affichées sur \emph{stdout} lors des séquences suivantes:
+
+\begin{parts}
+
+    \part[2] \begin{code}{c}{}
+int s = 1;
+while (s < 20) {
+    printf("%d ", s);
+    s <<= 1;
+}
+    \end{code}
+    \answerline[1 2 4 8 16 ]
+
+    \part[2] \begin{code}{c}{}
+for (int i = 5; i > 0; --i) {
+    if (i % 2 == 0) continue;
+    printf("%d", i);
+}
+    \end{code}
+    \answerline[531]
+
+    \part[2] \begin{code}{c}{}
+int total = 0;
+for (int i = 1; i <= 3; ++i) {
+    for (int j = i; j <= 3; ++j) {
+        total += j;
+    }
+}
+printf("%d", total);
+    \end{code}
+    \answerline[14]
+
+    \part[2] \begin{code}{c}{}
+for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 3; ++j) {
+        if (i == j) break;
+        printf("%d%d ", i, j);
+    }
+}
+    \end{code}
+    \answerline[10 20 21 ]
+
+    \part[2] \begin{code}{c}{}
+int i = 1, t = 0;
+do {
+    t += i;
+    printf("%d;", t);
+    i += 2;
+} while (t < 15);
+    \end{code}
+    \answerline[1;4;9;16;]
+
+\end{parts}

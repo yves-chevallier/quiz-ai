@@ -1,0 +1,516 @@
+{
+  "pages": [
+    {
+      "page_index": 0,
+      "page_height_mm": 297.0000885009765,
+      "page_width_mm": 210.00014478895397,
+      "anchors_mm": [],
+      "regions_mm": [],
+      "boxes_mm": [
+        {
+          "name": "cover-name-box",
+          "x_min_mm": 113.47485277777777,
+          "x_max_mm": 195.86469166666666,
+          "y_min_mm": 267.81019166666664,
+          "y_max_mm": 278.19984999999997
+        }
+      ]
+    },
+    {
+      "page_index": 1,
+      "page_height_mm": 297.0000885009765,
+      "page_width_mm": 210.00014478895397,
+      "anchors_mm": [
+        {
+          "name": "Q1-anchor",
+          "kind": "question",
+          "x_mm": 23.142574999999997,
+          "y_mm": 279.1138972222222,
+          "qnum": 1,
+          "part": null,
+          "subpart": null
+        },
+        {
+          "name": "Q1-end-anchor",
+          "kind": "question-end",
+          "x_mm": 22.500166666666665,
+          "y_mm": 150.9776,
+          "qnum": 1,
+          "part": null,
+          "subpart": null
+        }
+      ],
+      "regions_mm": [
+        {
+          "qnum": 1,
+          "y_start_mm": 147.9776,
+          "y_end_mm": 282.1138972222222,
+          "part": null,
+          "subpart": null
+        }
+      ],
+      "boxes_mm": []
+    },
+    {
+      "page_index": 2,
+      "page_height_mm": 297.0000885009765,
+      "page_width_mm": 210.00014478895397,
+      "anchors_mm": [
+        {
+          "name": "Q2-anchor",
+          "kind": "question",
+          "x_mm": 23.142574999999997,
+          "y_mm": 279.1138972222222,
+          "qnum": 2,
+          "part": null,
+          "subpart": null
+        },
+        {
+          "name": "part@2@1-anchor",
+          "kind": "part",
+          "x_mm": 29.342644444444442,
+          "y_mm": 279.1138972222222,
+          "qnum": 2,
+          "part": 1,
+          "subpart": null
+        },
+        {
+          "name": "subpart@2@1@1-anchor",
+          "kind": "subpart",
+          "x_mm": 39.287097222222215,
+          "y_mm": 265.70551944444446,
+          "qnum": 2,
+          "part": 1,
+          "subpart": 1
+        },
+        {
+          "name": "subpart@2@1@2-anchor",
+          "kind": "subpart",
+          "x_mm": 38.217122222222216,
+          "y_mm": 248.3163972222222,
+          "qnum": 2,
+          "part": 1,
+          "subpart": 2
+        },
+        {
+          "name": "subpart@2@1@3-anchor",
+          "kind": "subpart",
+          "x_mm": 37.147499999999994,
+          "y_mm": 230.92762777777773,
+          "qnum": 2,
+          "part": 1,
+          "subpart": 3
+        },
+        {
+          "name": "subpart@2@1@4-anchor",
+          "kind": "subpart",
+          "x_mm": 37.25509722222222,
+          "y_mm": 213.53850555555556,
+          "qnum": 2,
+          "part": 1,
+          "subpart": 4
+        },
+        {
+          "name": "subpart@2@1@5-anchor",
+          "kind": "subpart",
+          "x_mm": 38.32507222222222,
+          "y_mm": 196.14938333333333,
+          "qnum": 2,
+          "part": 1,
+          "subpart": 5
+        },
+        {
+          "name": "Q2-break-anchor",
+          "kind": "question-break",
+          "x_mm": 22.500166666666665,
+          "y_mm": 179.38150277777777,
+          "qnum": 2,
+          "part": null,
+          "subpart": null
+        },
+        {
+          "name": "part@2@2-anchor",
+          "kind": "part",
+          "x_mm": 29.12709722222222,
+          "y_mm": 171.72693055555555,
+          "qnum": 2,
+          "part": 2,
+          "subpart": null
+        },
+        {
+          "name": "subpart@2@2@1-anchor",
+          "kind": "subpart",
+          "x_mm": 39.287097222222215,
+          "y_mm": 158.31855277777777,
+          "qnum": 2,
+          "part": 2,
+          "subpart": 1
+        },
+        {
+          "name": "subpart@2@2@2-anchor",
+          "kind": "subpart",
+          "x_mm": 38.217122222222216,
+          "y_mm": 140.92943055555554,
+          "qnum": 2,
+          "part": 2,
+          "subpart": 2
+        },
+        {
+          "name": "subpart@2@2@3-anchor",
+          "kind": "subpart",
+          "x_mm": 37.147499999999994,
+          "y_mm": 123.5406611111111,
+          "qnum": 2,
+          "part": 2,
+          "subpart": 3
+        },
+        {
+          "name": "subpart@2@2@4-anchor",
+          "kind": "subpart",
+          "x_mm": 37.25509722222222,
+          "y_mm": 106.15153888888888,
+          "qnum": 2,
+          "part": 2,
+          "subpart": 4
+        },
+        {
+          "name": "subpart@2@2@5-anchor",
+          "kind": "subpart",
+          "x_mm": 38.32507222222222,
+          "y_mm": 88.76241666666667,
+          "qnum": 2,
+          "part": 2,
+          "subpart": 5
+        },
+        {
+          "name": "Q2-end-anchor",
+          "kind": "question-end",
+          "x_mm": 22.500166666666665,
+          "y_mm": 71.9945361111111,
+          "qnum": 2,
+          "part": null,
+          "subpart": null
+        }
+      ],
+      "regions_mm": [
+        {
+          "qnum": 2,
+          "y_start_mm": 176.38150277777777,
+          "y_end_mm": 282.1138972222222,
+          "part": 1,
+          "subpart": null
+        },
+        {
+          "qnum": 2,
+          "y_start_mm": 68.9945361111111,
+          "y_end_mm": 174.72693055555555,
+          "part": 2,
+          "subpart": null
+        }
+      ],
+      "boxes_mm": []
+    },
+    {
+      "page_index": 3,
+      "page_height_mm": 297.0000885009765,
+      "page_width_mm": 210.00014478895397,
+      "anchors_mm": [
+        {
+          "name": "Q3-anchor",
+          "kind": "question",
+          "x_mm": 23.142574999999997,
+          "y_mm": 279.1138972222222,
+          "qnum": 3,
+          "part": null,
+          "subpart": null
+        },
+        {
+          "name": "part@3@1-anchor",
+          "kind": "part",
+          "x_mm": 29.342644444444442,
+          "y_mm": 279.1138972222222,
+          "qnum": 3,
+          "part": 1,
+          "subpart": null
+        },
+        {
+          "name": "subpart@3@1@1-anchor",
+          "kind": "subpart",
+          "x_mm": 39.287097222222215,
+          "y_mm": 220.19365833333333,
+          "qnum": 3,
+          "part": 1,
+          "subpart": 1
+        },
+        {
+          "name": "subpart@3@1@2-anchor",
+          "kind": "subpart",
+          "x_mm": 38.217122222222216,
+          "y_mm": 204.16484722222222,
+          "qnum": 3,
+          "part": 1,
+          "subpart": 2
+        },
+        {
+          "name": "subpart@3@1@3-anchor",
+          "kind": "subpart",
+          "x_mm": 37.147499999999994,
+          "y_mm": 188.13603611111108,
+          "qnum": 3,
+          "part": 1,
+          "subpart": 3
+        },
+        {
+          "name": "subpart@3@1@4-anchor",
+          "kind": "subpart",
+          "x_mm": 37.25509722222222,
+          "y_mm": 172.10722499999997,
+          "qnum": 3,
+          "part": 1,
+          "subpart": 4
+        },
+        {
+          "name": "subpart@3@1@5-anchor",
+          "kind": "subpart",
+          "x_mm": 38.32507222222222,
+          "y_mm": 156.0784138888889,
+          "qnum": 3,
+          "part": 1,
+          "subpart": 5
+        },
+        {
+          "name": "Q3-break-anchor",
+          "kind": "question-break",
+          "x_mm": 22.500166666666665,
+          "y_mm": 140.71282499999998,
+          "qnum": 3,
+          "part": null,
+          "subpart": null
+        }
+      ],
+      "regions_mm": [
+        {
+          "qnum": 3,
+          "y_start_mm": 137.71282499999998,
+          "y_end_mm": 282.1138972222222,
+          "part": 1,
+          "subpart": null
+        }
+      ],
+      "boxes_mm": []
+    },
+    {
+      "page_index": 4,
+      "page_height_mm": 297.0000885009765,
+      "page_width_mm": 210.00014478895397,
+      "anchors_mm": [
+        {
+          "name": "part@3@2-anchor",
+          "kind": "part",
+          "x_mm": 29.12709722222222,
+          "y_mm": 279.1138972222222,
+          "qnum": 3,
+          "part": 2,
+          "subpart": null
+        },
+        {
+          "name": "subpart@3@2@1-anchor",
+          "kind": "subpart",
+          "x_mm": 39.287097222222215,
+          "y_mm": 216.4983111111111,
+          "qnum": 3,
+          "part": 2,
+          "subpart": 1
+        },
+        {
+          "name": "subpart@3@2@2-anchor",
+          "kind": "subpart",
+          "x_mm": 38.217122222222216,
+          "y_mm": 199.10918888888887,
+          "qnum": 3,
+          "part": 2,
+          "subpart": 2
+        },
+        {
+          "name": "subpart@3@2@3-anchor",
+          "kind": "subpart",
+          "x_mm": 37.147499999999994,
+          "y_mm": 181.72006666666664,
+          "qnum": 3,
+          "part": 2,
+          "subpart": 3
+        },
+        {
+          "name": "subpart@3@2@4-anchor",
+          "kind": "subpart",
+          "x_mm": 37.25509722222222,
+          "y_mm": 164.33094444444444,
+          "qnum": 3,
+          "part": 2,
+          "subpart": 4
+        },
+        {
+          "name": "subpart@3@2@5-anchor",
+          "kind": "subpart",
+          "x_mm": 38.32507222222222,
+          "y_mm": 146.942175,
+          "qnum": 3,
+          "part": 2,
+          "subpart": 5
+        },
+        {
+          "name": "Q3-end-anchor",
+          "kind": "question-end",
+          "x_mm": 22.500166666666665,
+          "y_mm": 130.17394166666665,
+          "qnum": 3,
+          "part": null,
+          "subpart": null
+        }
+      ],
+      "regions_mm": [
+        {
+          "qnum": 3,
+          "y_start_mm": 127.17394166666665,
+          "y_end_mm": 282.1138972222222,
+          "part": 2,
+          "subpart": null
+        }
+      ],
+      "boxes_mm": []
+    },
+    {
+      "page_index": 5,
+      "page_height_mm": 297.0000885009765,
+      "page_width_mm": 210.00014478895397,
+      "anchors_mm": [
+        {
+          "name": "Q4-anchor",
+          "kind": "question",
+          "x_mm": 23.142574999999997,
+          "y_mm": 279.1138972222222,
+          "qnum": 4,
+          "part": null,
+          "subpart": null
+        },
+        {
+          "name": "part@4@1-anchor",
+          "kind": "part",
+          "x_mm": 29.492575,
+          "y_mm": 271.25365555555555,
+          "qnum": 4,
+          "part": 1,
+          "subpart": null
+        },
+        {
+          "name": "part@4@2-anchor",
+          "kind": "part",
+          "x_mm": 29.277027777777775,
+          "y_mm": 232.71762222222222,
+          "qnum": 4,
+          "part": 2,
+          "subpart": null
+        },
+        {
+          "name": "part@4@3-anchor",
+          "kind": "part",
+          "x_mm": 29.708122222222222,
+          "y_mm": 198.04768055555553,
+          "qnum": 4,
+          "part": 3,
+          "subpart": null
+        },
+        {
+          "name": "part@4@4-anchor",
+          "kind": "part",
+          "x_mm": 29.277027777777775,
+          "y_mm": 151.77946388888887,
+          "qnum": 4,
+          "part": 4,
+          "subpart": null
+        },
+        {
+          "name": "part@4@5-anchor",
+          "kind": "part",
+          "x_mm": 29.708122222222222,
+          "y_mm": 109.37733888888887,
+          "qnum": 4,
+          "part": 5,
+          "subpart": null
+        }
+      ],
+      "regions_mm": [
+        {
+          "qnum": 4,
+          "y_start_mm": 229.71762222222222,
+          "y_end_mm": 274.25365555555555,
+          "part": 1,
+          "subpart": null
+        },
+        {
+          "qnum": 4,
+          "y_start_mm": 195.04768055555553,
+          "y_end_mm": 235.71762222222222,
+          "part": 2,
+          "subpart": null
+        },
+        {
+          "qnum": 4,
+          "y_start_mm": 148.77946388888887,
+          "y_end_mm": 201.04768055555553,
+          "part": 3,
+          "subpart": null
+        },
+        {
+          "qnum": 4,
+          "y_start_mm": 106.37733888888887,
+          "y_end_mm": 154.77946388888887,
+          "part": 4,
+          "subpart": null
+        },
+        {
+          "qnum": 4,
+          "y_start_mm": 0.0,
+          "y_end_mm": 112.37733888888887,
+          "part": 5,
+          "subpart": null
+        }
+      ],
+      "boxes_mm": []
+    },
+    {
+      "page_index": 6,
+      "page_height_mm": 297.0000885009765,
+      "page_width_mm": 210.00014478895397,
+      "anchors_mm": [
+        {
+          "name": "Q5-anchor",
+          "kind": "question",
+          "x_mm": 23.142574999999997,
+          "y_mm": 279.1138972222222,
+          "qnum": 5,
+          "part": null,
+          "subpart": null
+        }
+      ],
+      "regions_mm": [
+        {
+          "qnum": 5,
+          "y_start_mm": 0.0,
+          "y_end_mm": 282.1138972222222,
+          "part": null,
+          "subpart": null
+        }
+      ],
+      "boxes_mm": []
+    },
+    {
+      "page_index": 7,
+      "page_height_mm": 297.0000885009765,
+      "page_width_mm": 210.00014478895397,
+      "anchors_mm": [],
+      "regions_mm": [],
+      "boxes_mm": []
+    }
+  ]
+}

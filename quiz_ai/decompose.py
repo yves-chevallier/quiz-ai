@@ -7,14 +7,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple, Iterable
 
 import fitz  # PyMuPDF
 from PIL import Image
 
 # Import the Pydantic models produced by your anchors module
 # (names assumed from your previous code)
-from .anchors import Anchors, PageAnchors  # type: ignore[reportMissingImports]
+from .anchors import Anchors, PageAnchors, BoxRegion  # type: ignore[reportMissingImports]
 
 
 @dataclass(frozen=True)
@@ -45,11 +45,22 @@ class CropBox:
 
 @dataclass(frozen=True)
 class RegionCrop:
-    """Represents a cropped region for a specific question."""
+    """Represents a cropped region for a specific question/part/subpart."""
 
     question_id: int
     page_index: int
     region_index: int
+    path: Path
+    part: Optional[int] = None
+    subpart: Optional[int] = None
+
+
+@dataclass(frozen=True)
+class BoxCrop:
+    """Represents a cropped named box."""
+
+    name: str
+    page_index: int
     path: Path
 
 
@@ -80,6 +91,46 @@ def mm_region_to_pixel_box(
         bottom_px = min(img_h, top_px + 1)
 
     return CropBox(left=0, top=top_px, right=img_w, bottom=bottom_px)
+
+
+def mm_box_to_pixel_box(
+    box: BoxRegion,
+    img_w: int,
+    img_h: int,
+    page_width_mm: float,
+    page_height_mm: float,
+    margin_mm: float = 0.0,
+) -> CropBox:
+    """
+    Convert a rectangular box defined in mm to pixel coordinates, applying an optional margin.
+    """
+    if page_width_mm <= 0 or page_height_mm <= 0:
+        raise ValueError("page dimensions must be > 0")
+
+    scale_x = img_w / page_width_mm
+    scale_y = img_h / page_height_mm
+
+    x_min = max(0.0, box.x_min_mm - margin_mm)
+    x_max = min(page_width_mm, box.x_max_mm + margin_mm)
+    y_min = max(0.0, box.y_min_mm - margin_mm)
+    y_max = min(page_height_mm, box.y_max_mm + margin_mm)
+
+    left_px = int(round(x_min * scale_x))
+    right_px = int(round(x_max * scale_x))
+    top_px = int(round(img_h - (y_max * scale_y)))
+    bottom_px = int(round(img_h - (y_min * scale_y)))
+
+    left_px = max(0, min(img_w, left_px))
+    right_px = max(0, min(img_w, right_px))
+    top_px = max(0, min(img_h, top_px))
+    bottom_px = max(0, min(img_h, bottom_px))
+
+    if right_px <= left_px:
+        right_px = min(img_w, left_px + 1)
+    if bottom_px <= top_px:
+        bottom_px = min(img_h, top_px + 1)
+
+    return CropBox(left=left_px, top=top_px, right=right_px, bottom=bottom_px)
 
 
 def _save_pillow_image(img: Image.Image, dest: Path, quality: int = 95) -> None:
@@ -176,6 +227,8 @@ class PdfCutter:
         base_stem = base_output_stem or image_path.stem
         ext = (out_ext or image_path.suffix.lstrip(".")).lower()
 
+        label_counts: Dict[str, int] = {}
+
         with Image.open(image_path) as im:
             if ext in {"jpg", "jpeg"} and im.mode != "RGB":
                 im = im.convert("RGB")
@@ -185,10 +238,25 @@ class PdfCutter:
                 y_start = float(reg["y_start_mm"])
                 y_end = float(reg["y_end_mm"])
                 qnum = int(reg["qnum"])
+                part_val = reg.get("part")
+                subpart_val = reg.get("subpart")
+                part_idx = int(part_val) if isinstance(part_val, (int, float)) else None
+                subpart_idx = int(subpart_val) if isinstance(subpart_val, (int, float)) else None
                 box = mm_region_to_pixel_box(w, h, page_height_mm, y_start, y_end)
 
                 cropped = im.crop(box.as_tuple())
-                out_name = f"{base_stem}_{i}.{ext}"
+                label_parts = [str(qnum)]
+                if part_idx:
+                    label_parts.append(str(part_idx))
+                if subpart_idx:
+                    label_parts.append(str(subpart_idx))
+                label = "_".join(label_parts)
+                if not label:
+                    label = f"{qnum}"
+                count = label_counts.get(label, 0)
+                label_counts[label] = count + 1
+                file_label = f"{label}_{count+1}" if count else label
+                out_name = f"{base_stem}_{file_label}.{ext}"
                 out_path = output_dir / out_name
                 _save_pillow_image(cropped, out_path, self.quality)
                 written.append(
@@ -197,6 +265,8 @@ class PdfCutter:
                         page_index=page_index,
                         region_index=i,
                         path=out_path,
+                        part=part_idx,
+                        subpart=subpart_idx,
                     )
                 )
 
@@ -247,6 +317,58 @@ class PdfCutter:
             all_written.extend(written)
 
         return all_written
+
+    def crop_box_images(
+        self,
+        pdf_path: Path,
+        anchors: Anchors,
+        out_dir: Path,
+        margin_mm: float = 0.0,
+        box_names: Optional[Iterable[str]] = None,
+    ) -> List[BoxCrop]:
+        """
+        Render the PDF and crop each named box (e.g., cover name field) with an optional margin.
+        """
+        out_dir.mkdir(parents=True, exist_ok=True)
+        pages_dir = out_dir / "_pages"
+        page_images = self.render_pdf_to_images(pdf_path, pages_dir)
+        page_images_map = {img.page_index: img for img in page_images}
+        requested = {name for name in box_names} if box_names else None
+
+        written: List[BoxCrop] = []
+        for page_entry in anchors.pages:
+            if not page_entry.boxes_mm:
+                continue
+            page_image = page_images_map.get(page_entry.page_index)
+            if not page_image:
+                continue
+            with Image.open(page_image.path) as im:
+                if im.mode != "RGB":
+                    im = im.convert("RGB")
+                w, h = im.size
+                for box in page_entry.boxes_mm:
+                    if requested and box.name not in requested:
+                        continue
+                    crop_box = mm_box_to_pixel_box(
+                        box=box,
+                        img_w=w,
+                        img_h=h,
+                        page_width_mm=float(page_entry.page_width_mm),
+                        page_height_mm=float(page_entry.page_height_mm),
+                        margin_mm=margin_mm,
+                    )
+                    cropped = im.crop(crop_box.as_tuple())
+                    out_name = f"page{page_entry.page_index+1}_{box.name}.jpg"
+                    out_path = out_dir / out_name
+                    _save_pillow_image(cropped, out_path, self.quality)
+                    written.append(
+                        BoxCrop(
+                            name=box.name,
+                            page_index=page_entry.page_index,
+                            path=out_path,
+                        )
+                    )
+        return written
 
 
 # Convenience functional API, if you prefer functions over the class

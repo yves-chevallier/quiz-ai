@@ -1,0 +1,40 @@
+\titledquestion{Numération}[10]
+
+\setlength\answerlinelength{5 cm}
+
+Pour chacune des constantes littérales suivantes indiquez leur équivalent:
+
+\begin{enumerate}
+    \item binaire,
+    \item octal,
+    \item décimal signé,
+    \item décimal non signé et
+    \item hexadécimal.
+\end{enumerate}
+
+Considérez que les nombres sont stockés en mémoire sur \textbf{8 bits} et que la représentation signée utilise le \textbf{complément à deux}.
+Complétez le tableau ci-dessous en remplissant les cases vides.
+
+\vskip 2em
+
+\renewcommand{\arraystretch}{2}
+
+\begin{center}
+    \begin{tabular}{ccccc}
+        \textbf{bin}             & \textbf{octal}     & \textbf{int}        & \textbf{uint}     & \textbf{hex}       \\
+        \midrule
+        |0b01011010|             & \fillin[0132][2cm] & \fillin[+90][2cm]   & \fillin[90][2cm]  & \fillin[0x5a][2cm] \\
+        \fillin[0b11000111][2cm] & \fillin[0307][2cm] & \fillin[-57][2cm]   & |199|             & \fillin[0xc7][2cm] \\
+        \fillin[0b10010000][2cm] & \fillin[0220][2cm] & |-112|              & \fillin[144][2cm] & \fillin[0x90][2cm] \\
+        \fillin[0b01111101][2cm] & |0175|             & \fillin[+125][2cm]  & \fillin[125][2cm] & \fillin[0x7d][2cm] \\
+        \fillin[0b11111010][2cm] & \fillin[0372][2cm] & \fillin[-6][2cm]    & \fillin[250][2cm] & |0xfa|             \\
+
+    \end{tabular}
+\end{center}
+\vspace{1cm}
+\questionanchorhere[-end]
+\begin{solution}
+    Pour retrouver la valeur signée d'un nombre négatif, appliquez la règle du complément à deux :
+    inversion des bits puis ajout de 1. Le passage en base octale s'obtient en regroupant les bits
+    par paquets de trois à partir de la droite, et l'hexadécimal en paquets de quatre.
+\end{solution}

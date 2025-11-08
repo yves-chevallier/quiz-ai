@@ -1,0 +1,91 @@
+\clearpage
+\noaddpoints
+\titledquestion{Entrées \& sorties}[\totalpoints]
+\addpoints
+
+\begin{parts}
+    \part
+    Pour les appels de fonction \lstinline{printf} suivants, indiquez l'affichage exact produit sur \emph{stdout} ou, en cas d'erreur, la nature de cette dernière. Représentez la sortie dans l'espace approprié, un caractère par case. Utilisez la notation des caractères d'échappement du langage C pour les caractères non imprimables (p.~ex. \lstinline{\n}). Terminez chaque sortie par une croix sur toute la case.
+
+    Considérez les états des variables suivants:
+    \begin{code}{c}{}
+short s = -27;
+unsigned char uc = 201;
+char c = 'c'; // Valeur ASCII de 'c': 99
+double x = 2.71828;
+    \end{code}
+
+    \vskip 2em
+    \setlength{\gridsize}{7mm}
+    \setlength{\gridlinewidth}{0.1pt}
+
+    \begin{subparts}
+
+        \subpart[1] \lstinline{printf("|0x%05x|\n", uc);}
+        \begin{solutionorgrid}[1cm]
+            \lstinline!|0x000c9|\n!
+        \end{solutionorgrid}
+
+        \subpart[1] \lstinline{printf("%+7.2f\n", s / 2.0);}
+        \begin{solutionorgrid}[1cm]
+            \lstinline! -13.50\n!
+        \end{solutionorgrid}
+
+        \subpart[1] \lstinline{printf("%c%c%c%c %hhd", c, c - 2, 'a' + 2, 97, c);}
+        \begin{solutionorgrid}[1cm]
+            \lstinline!caca 99!
+        \end{solutionorgrid}
+
+        \subpart[1] \lstinline{printf(">%-06.1f<", x);}
+        \begin{solutionorgrid}[1cm]
+            \lstinline!>0002.7<!
+        \end{solutionorgrid}
+
+        \subpart[1] \lstinline{printf("%-*.*f%d\n", 7, 3, 5.4321, 42);}
+        \begin{solutionorgrid}[1cm]
+            \lstinline!5.432  42!
+        \end{solutionorgrid}
+
+    \end{subparts}
+
+    \questionanchorhere[-break]
+
+    \newpage
+    \part Entrée standard.
+
+    Soient les déclarations suivantes:
+
+    \begin{code}{c}{}
+int r = 0, n = 0, m = 0;
+double y = 0.0;
+char ch = '0';
+    \end{code}
+    Pour les appels \lstinline{sscanf} qui suivent, indiquez:
+
+    \begin{enumerate}
+        \item la valeur des variables affectées;
+        \item la valeur de retour \lstinline{r}.
+    \end{enumerate}
+
+    \vskip 2em
+    \begin{subparts}
+
+        \subpart[1] \lstinline{r = sscanf("  -15 0x1f", "%d %i", &n, &m);}
+        \answerline[\lstinline{r = 2; n = -15; m = 31;}]
+
+        \subpart[1] \lstinline{r = sscanf("42kg", "%2d%c", &n, &ch);}
+        \answerline[\lstinline{r = 2; n = 42; ch = 'k';}]
+
+        \subpart[1] \lstinline{r = sscanf("0.75,12", "%lf,%d", &y, &n);}
+        \answerline[\lstinline{r = 2; y = 0.75; n = 12;}]
+
+        \subpart[1] \lstinline{r = sscanf("abc", "%d", &n);}
+        \answerline[\lstinline{r = 0;}]
+
+        \subpart[1] \lstinline{r = sscanf("9.82", "%d %d", &n, &m);}
+        \answerline[\lstinline{r = 1; n = 9;}]
+
+    \end{subparts}
+
+\questionanchorhere[-end]
+\end{parts}

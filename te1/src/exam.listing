@@ -1,0 +1,10 @@
+$ ./parallel 120 220 330
+54.6796
+$ ./parallel 100 100 100 100 100
+20.0
+$ echo $?
+0
+$ ./parallel 47 -10 10
+Error: Invalid resistance values
+$ echo $?
+1

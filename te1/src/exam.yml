@@ -1,0 +1,339 @@
+schema_version: "1.0"
+meta:
+  title: "Travail écrit Info1-TIN-B"
+  subtitle: "TE-01"
+  code: "TE-01"
+  author: "Prof. Yves Chevallier"
+  department: "Département TIN"
+  school: "Haute École d'Ingénierie et de Gestion du Canton de Vaud"
+  date: "2025-11-04"
+  locale: "fr-CH"
+  language: "fr"
+  directives:
+    - "Écrire votre nom et votre prénom sur la première page."
+    - "Écrire lisiblement, au stylo ou au crayon à papier gras."
+    - "Répondre aux questions dans les espaces appropriés."
+    - "Relire toutes vos réponses avant de rendre votre travail."
+    - "Rendre toutes les feuilles de ce travail écrit."
+    - "Les réponses données sur les feuilles de brouillon ne sont pas acceptées."
+    - "Aucun moyen de communication autorisé."
+    - "Toutes les réponses concernent le langage C (standard C20)."
+  randomization:
+    shuffle_questions: false
+    shuffle_choices: false
+  grading:
+    default_points: 10
+    negative_points: false
+    partial_credit: "rubric"
+
+questions:
+  - title: "Numération"
+    type: fill_in_table
+    points: 10
+    question: |
+      Pour chacune des constantes littérales suivantes indiquez leur équivalent:
+
+      - binaire,
+      - octal,
+      - décimal signé,
+      - décimal non signé et
+      - hexadécimal.
+
+      Considérez que les nombres sont stockés en mémoire sur **8 bits** et que la représentation signée utilise le **complément à deux**.
+      Complétez le tableau ci-dessous en remplissant les cases vides.
+
+      | bin            | octal    | int      | uint    | hex      |
+      |----------------|----------|----------|---------|----------|
+      | 0b01011010     | {{0132}} | {{+90}}  | {{90}}  | {{0x5a}} |
+      | {{0b11000111}} | {{0307}} | {{-57}}  | 199     | {{0xc7}} |
+      | {{0b10010000}} | {{0220}} | -112     | {{144}} | {{0x90}} |
+      | {{0b01111101}} | 0175     | {{+125}} | {{125}} | {{0x7d}} |
+      | {{0b11111010}} | {{0372}} | {{-6}}   | {{250}} | 0xfa     |
+    solution: |
+      Pour retrouver la valeur signée d'un nombre négatif, appliquez la règle du complément à deux (inversion des bits puis ajout de 1).
+      Le passage en base octale s'obtient en regroupant les bits par paquets de trois à partir de la droite, et l'hexadécimal en paquets de quatre.
+    responses:
+      match_case: false
+      alternatives:
+        "+90": ["90"]
+        "+125": ["125"]
+        "-6": ["-06", "-6"]
+        "-57": ["-57"]
+        "0132": ["132", "0o132"]
+        "0307": ["307", "0o307"]
+        "0220": ["220", "0o220"]
+        "0372": ["372", "0o372"]
+        "0x5a": ["5a", "0X5A"]
+        "0xc7": ["c7", "0Xc7", "0XC7"]
+        "0x90": ["90", "0X90"]
+        "0x7d": ["7d", "0X7D"]
+        "0b11000111": ["11000111"]
+        "0b10010000": ["10010000"]
+        "0b01111101": ["01111101"]
+        "0b11111010": ["11111010"]
+
+  - title: "Syntaxe — Identificateurs"
+    type: short_answer
+    points: 5
+    question: |
+      Pour chacun des identificateurs suivants, indiquez s'ils sont corrects selon le standard C.
+      S'ils sont invalides, proposez un nom compatible en C (ASCII, lettres/chiffres et `_` uniquement).
+
+      1. `résumé` → statut {{id1_status}} ; proposition {{id1_name}}
+      2. `_AMountain_` → statut {{id2_status}} ; proposition {{id2_name}}
+      3. `while` → statut {{id3_status}} ; proposition {{id3_name}}
+      4. `std99` → statut {{id4_status}} ; proposition {{id4_name}}
+      5. `data-stream` → statut {{id5_status}} ; proposition {{id5_name}}
+    instructions: |
+      Mentionner explicitement si l'identificateur est « Correct » ou « Incorrect ».
+      Pour les cas incorrects, proposer un identificateur ASCII valide et expliquer brièvement la raison (accent, mot-clé, tiret, etc.).
+    solution: |
+      1. `résumé` est **Incorrect** (accent). Proposition : `resume` ou `summary`.
+      2. `_AMountain_` est **Correct**.
+      3. `while` est **Incorrect** car mot-clé réservé. Proposition : `case_value`, `while_loop`, etc.
+      4. `std99` est **Correct**.
+      5. `data-stream` est **Incorrect** (tiret). Proposition : `data_stream`.
+    responses:
+      match_case: false
+      alternatives:
+        Correct: ["ok", "valide"]
+        Incorrect: ["non", "invalide"]
+        resume: ["summary"]
+        case_value: ["while_loop", "caseValue"]
+        data_stream: ["datastream", "data_stream1"]
+
+  - title: "Syntaxe — Littéraux"
+    type: short_answer
+    points: 5
+    question: |
+      Pour chaque constante littérale suivante, indiquez si elle est **Correcte** et, si applicable, précisez le **type** associé.
+
+      | Littéral   | Statut       | Type attendu           |
+      |------------|--------------|------------------------|
+      | `42uL`     | {{lit1_status}} | {{lit1_type}}        |
+      | `0758`     | {{lit2_status}} | {{lit2_type}}        |
+      | `.128f`    | {{lit3_status}} | {{lit3_type}}        |
+      | `'\\x41'`  | {{lit4_status}} | {{lit4_type}}        |
+      | `0b00001010` | {{lit5_status}} | {{lit5_type}}      |
+    instructions: |
+      Indiquez « Correct » ou « Incorrect » pour la colonne Statut. Laissez le type vide si le littéral est incorrect.
+    solution: |
+      - `42uL` : Correct, type `unsigned long int`.
+      - `0758` : Incorrect (les littéraux octaux n'acceptent pas 8 ou 9).
+      - `.128f` : Correct, type `float`.
+      - `'\\x41'` : Correct, type `char`.
+      - `0b00001010` : Correct à partir de C23 (`int`).
+    responses:
+      match_case: false
+      alternatives:
+        unsigned long int: ["unsigned long", "ulong", "unsigned long int."]
+        float: ["floating", "flt"]
+        char: ["character"]
+        int: ["signed int"]
+        Correct: ["ok", "valide"]
+        Incorrect: ["non", "invalide"]
+
+  - id: 4
+    label: "Entrées et sorties — printf"
+    type: short_answer
+    points: 5
+    question: |
+      Considérez les variables suivantes :
+
+      ```c
+      short s = -27;
+      unsigned char uc = 201;
+      char c = 'c'; // ASCII 99
+      double x = 2.71828;
+      ```
+
+      Donnez la sortie exacte produite (y compris espaces ou séquences `\n`) pour chaque
+      appel `printf` suivant. Utilisez la notation `\n` pour représenter un saut de ligne.
+
+      1. `printf("|0x%05x|\\n", uc);` → {{printf1}}
+      2. `printf("%+7.2f\\n", s / 2.0);` → {{printf2}}
+      3. `printf("%c%c%c%c %hhd", c, c - 2, 'a' + 2, 97, c);` → {{printf3}}
+      4. `printf(">%-06.1f<", x);` → {{printf4}}
+      5. `printf("%-*.*f%d\\n", 7, 3, 5.4321, 42);` → {{printf5}}
+    solution: |
+      1. `|0x000c9|\n`
+      2. ` -13.50\n` (un espace de tête)
+      3. `caca 99`
+      4. `>0002.7<`
+      5. `5.432  42` (deux espaces avant `42`)
+    responses:
+      match_case: false
+      alternatives:
+        "|0x000c9|\\n": ["|0x000c9|\\n"]
+        " -13.50\\n": ["-13.50\\n", " -13.50"]
+        caca 99: ["caca 99 "]
+        ">0002.7<": [">0002.700<"]
+        "5.432  42": ["5.432__42"]
+
+  - id: 5
+    label: "Entrées et sorties — sscanf"
+    type: short_answer
+    points: 5
+    question: |
+      Soient les déclarations suivantes :
+
+      ```c
+      int r = 0, n = 0, m = 0;
+      double y = 0.0;
+      char ch = '0';
+      ```
+
+      Pour les appels `sscanf` ci-dessous, indiquez les valeurs finales des variables et la valeur de retour `r`.
+
+      1. `r = sscanf("  -15 0x1f", "%d %i", &n, &m);` → {{scanf1}}
+      2. `r = sscanf("42kg", "%2d%c", &n, &ch);` → {{scanf2}}
+      3. `r = sscanf("0.75,12", "%lf,%d", &y, &n);` → {{scanf3}}
+      4. `r = sscanf("abc", "%d", &n);` → {{scanf4}}
+      5. `r = sscanf("9.82", "%d %d", &n, &m);` → {{scanf5}}
+    solution: |
+      1. `r = 2; n = -15; m = 31;`
+      2. `r = 2; n = 42; ch = 'k';`
+      3. `r = 2; y = 0.75; n = 12;`
+      4. `r = 0;`
+      5. `r = 1; n = 9;`
+    responses:
+      match_case: false
+      alternatives:
+        "r = 2; n = -15; m = 31;": ["r=2;n=-15;m=31"]
+        "r = 2; n = 42; ch = 'k';": ["r=2; n=42; ch='k';"]
+        "r = 2; y = 0.75; n = 12;": ["r=2;y=0.75;n=12"]
+        "r = 0;": ["r=0;"]
+        "r = 1; n = 9;": ["r=1;n=9;"]
+
+  - id: 6
+    label: "Structures de contrôle"
+    type: short_answer
+    points: 10
+    question: |
+      Donnez les valeurs affichées sur `stdout` pour chaque fragment de code C suivant :
+
+      1.
+         ```c
+         int s = 1;
+         while (s < 20) {
+             printf("%d ", s);
+             s <<= 1;
+         }
+         ```
+         → {{ctrl1}}
+
+      2.
+         ```c
+         for (int i = 5; i > 0; --i) {
+             if (i % 2 == 0) continue;
+             printf("%d", i);
+         }
+         ```
+         → {{ctrl2}}
+
+      3.
+         ```c
+         int total = 0;
+         for (int i = 1; i <= 3; ++i) {
+             for (int j = i; j <= 3; ++j) {
+                 total += j;
+             }
+         }
+         printf("%d", total);
+         ```
+         → {{ctrl3}}
+
+      4.
+         ```c
+         for (int i = 0; i < 3; ++i) {
+             for (int j = 0; j < 3; ++j) {
+                 if (i == j) break;
+                 printf("%d%d ", i, j);
+             }
+         }
+         ```
+         → {{ctrl4}}
+
+      5.
+         ```c
+         int i = 1, t = 0;
+         do {
+             t += i;
+             printf("%d;", t);
+             i += 2;
+         } while (t < 15);
+         ```
+         → {{ctrl5}}
+    solution: |
+      1. `1 2 4 8 16 `
+      2. `531`
+      3. `14`
+      4. `10 20 21 `
+      5. `1;4;9;16;`
+    responses:
+      match_case: false
+      alternatives:
+        "1 2 4 8 16 ": ["1 2 4 8 16", "1,2,4,8,16"]
+        "531": ["5 3 1"]
+        "14": ["14 "]
+        "10 20 21 ": ["10 20 21", "10,20,21"]
+        "1;4;9;16;": ["1;4;9;16", "1 ; 4 ; 9 ; 16 ;"]
+
+  - id: 7
+    label: "Programmation — Résistances en parallèle"
+    type: programming
+    points: 10
+    question: |
+      Écrire un programme complet en C qui calcule la résistance équivalente d'un réseau de `N` résistances montées en parallèle, selon :
+
+      $$
+      R_{\mathrm{eq}} = \left(\frac{1}{R_1} + \frac{1}{R_2} + \cdots + \frac{1}{R_N}\right)^{-1}
+      $$
+
+      - Les valeurs sont fournies via les arguments de la ligne de commande (`argv[1..N]`).
+      - Toute valeur manquante, nulle ou négative doit provoquer un message d'erreur et un code de retour non nul.
+      - Vous pouvez utiliser `sscanf` pour valider les entrées.
+      - Exemple attendu :
+
+        ```bash
+        $ ./parallel 120 220 330
+        54.6796
+        $ ./parallel 100 100 100 100 100
+        20.0
+        $ ./parallel 47 -10 10
+        Error: Invalid resistance values
+        ```
+    instructions: |
+      Critères de correction :
+      - Validation robuste des arguments (nombre suffisant, valeurs strictement positives).
+      - Utilisation d'un accumulateur en double précision pour la somme des inverses.
+      - Affichage du résultat (au moins 4 chiffres significatifs).
+      - Message d'erreur cohérent et code de retour `1` en cas d'entrée invalide.
+    solution: |
+      ```c
+      #include <stdio.h>
+      #include <stdlib.h>
+
+      int main(int argc, char *argv[]) {
+          if (argc < 2) {
+              fprintf(stderr, "Usage: %s R1 R2 ...\n", argv[0]);
+              return 1;
+          }
+          double inv_sum = 0.0;
+          for (int i = 1; i < argc; ++i) {
+              double r = 0.0;
+              if (sscanf(argv[i], "%lf", &r) != 1 || r <= 0.0) {
+                  fprintf(stderr, "Error: Invalid resistance values\n");
+                  return 1;
+              }
+              inv_sum += 1.0 / r;
+          }
+          if (inv_sum == 0.0) {
+              fprintf(stderr, "Error: Invalid resistance values\n");
+              return 1;
+          }
+          double req = 1.0 / inv_sum;
+          printf("%g\n", req);
+          return 0;
+      }
+      ```
