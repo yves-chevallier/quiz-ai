@@ -1,0 +1,12 @@
+\BLOCK{- set callout_type = ((type or 'note') | lower) -}
+\BLOCK{- set show_title = title and (title | lower) != 'solution' -}
+\BLOCK{ if callout_type == 'solution' }
+\begin{solution}
+\BLOCK{ if show_title }\textbf{\VAR{title}}\\[0.2em]\BLOCK{ endif }
+\VAR{text}
+\end{solution}
+\BLOCK{ else }
+\begin{callout}[callout \VAR{type}]{\VAR{title}}
+\VAR{text}
+\end{callout}
+\BLOCK{ endif }

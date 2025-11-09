@@ -1,0 +1,122 @@
+\documentclass\VAR{documentclass_options}{exam}
+
+\usepackage{fontspec}
+
+\usepackage[\VAR{language|default('french')}]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{bashful}
+\usepackage{booktabs}
+\usepackage{minted}
+\usepackage{listings}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{xpatch}
+\usepackage{realboxes}
+\usepackage{textcomp}
+\usepackage{xfrac}
+\usepackage{tikzpagenodes}
+\usepackage[many,minted,xparse,skins,breakable]{tcolorbox}
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage{heiglogo}
+\usepackage{tikz}
+\usepackage{tabularx,ragged2e}
+\usepackage{zref-savepos}
+\usepackage{letltxmacro}
+\usepackage[siunitx]{circuitikz}
+
+\makeatletter
+\input{hexam.sty}
+
+\geometry{a4paper, total={165mm,250mm}}
+
+\setlength{\parskip}{0.75em}
+\setlength{\parindent}{0pt}
+
+\renewcommand{\questionlabel}{%
+  \Hy@raisedlink{\hypertarget{Q\thequestion-anchor}{}}%
+  \thequestion.
+}
+\renewcommand{\partlabel}{%
+  \Hy@raisedlink{\hypertarget{part@\arabic{question}@\arabic{partno}-anchor}{}}%
+  (\thepartno)
+}
+\renewcommand{\subpartlabel}{%
+  \Hy@raisedlink{\hypertarget{subpart@\arabic{question}@\arabic{partno}@\arabic{subpart}-anchor}{}}%
+  \thesubpart.
+}
+\newcommand{\questionanchorhere}[1][]{%
+  \Hy@raisedlink{\hypertarget{Q\thequestion#1-anchor}{}}%
+}
+\makeatother
+
+\lstMakeShortInline|
+\pointsdroppedatright
+\renewcommand{\checkboxeshook}{%
+  \settowidth{\leftmargin}{W.}%
+  \labelwidth\leftmargin\advance\labelwidth-\labelsep%
+}
+\renewcommand{\partshook}{\setlength{\itemsep}{1em}}
+
+\setlength{\gridsize}{5mm}
+\setlength{\gridlinewidth}{0.1pt}
+\colorgrids
+\definecolor{GridColor}{gray}{0.5}
+\definecolor{FillWithDottedLinesColor}{gray}{0.5}
+
+\newcommand{\titlequestion}{\titledquestion}
+
+\title{\VAR{title|latex_escape}\BLOCK{ if subtitle }\\\large \VAR{subtitle|latex_escape}\BLOCK{ endif }}
+\author{\VAR{author|latex_escape}}
+\department{\VAR{department|latex_escape}}
+\school{\VAR{school|latex_escape}}
+\date{\VAR{date|latex_escape}}
+
+\begin{document}
+
+\thispagestyle{empty}
+\begin{coverpages}
+  \maketitle
+  \thispagestyle{empty}
+
+  \BLOCK{ if cover_notice }
+  \begin{center}
+    \noindent\VAR{cover_notice|latex_escape}
+  \end{center}
+  \BLOCK{ endif }
+
+  \BLOCK{ if directives }
+  \vspace{1em}
+  \fbox{\fbox{\parbox{5.5in}{
+    \textbf{Consignes~:}\vspace{0.5em}%
+    \begin{itemize}
+    \BLOCK{ for directive in directives }
+      \item \VAR{directive|latex_escape}
+    \BLOCK{ endfor }
+    \end{itemize}
+  }}}
+  \BLOCK{ endif }
+
+  \BLOCK{ if show_gradetable }
+  \begin{center}
+    \vspace{1em}
+    \makeatletter
+    \@ifundefined{exam@numpoints}{%
+      \fbox{Run LaTeX again to produce the table}%
+    }{%
+      \gradetable[v][questions]%
+    }
+    \makeatother
+  \end{center}
+  \BLOCK{ endif }
+\end{coverpages}
+
+\setcounter{page}{2}
+
+\begin{questions}
+\VAR{mainmatter}
+\end{questions}
+
+\end{document}

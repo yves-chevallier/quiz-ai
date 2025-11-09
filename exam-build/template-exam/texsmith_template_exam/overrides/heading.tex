@@ -1,0 +1,33 @@
+\BLOCK{- set mapping = {
+    1: 'titlequestion',
+    2: 'part',
+    3: 'subpart',
+    4: 'subsubpart'
+} -}
+\BLOCK{- set target = mapping.get(level) -}
+\BLOCK{ if target }
+\BLOCK{ if target == 'titlequestion' }
+\titlequestion{\VAR{text}}\BLOCK{ if ref }\label{\VAR{ref}}\BLOCK{ endif }
+\BLOCK{ elif target == 'part' }
+\part{\VAR{text}}
+\BLOCK{ elif target == 'subpart' }
+\subpart{\VAR{text}}
+\BLOCK{ elif target == 'subsubpart' }
+\subsubpart{\VAR{text}}
+\BLOCK{ endif }
+\BLOCK{ else }
+\BLOCK{- set number_to_words = {
+            -1: 'part',
+             0: 'chapter',
+             1: 'section',
+             2: 'subsection',
+             3: 'subsubsection',
+             4: 'paragraph',
+             5: 'subparagraph'
+        } -}
+\BLOCK{- if level in number_to_words -}
+\\VAR{number_to_words[level]}\BLOCK{if not numbered and level <= 5}*\BLOCK{endif}{\VAR{text}}\BLOCK{if ref}\label{\VAR{ref}}\BLOCK{endif}\BLOCK{if level >= 4}\mbox{}\\\BLOCK{endif}
+\BLOCK{- else -}
+\textbf{\VAR{text}}\BLOCK{if ref}\label{\VAR{ref}}\BLOCK{endif}
+\BLOCK{- endif -}
+\BLOCK{ endif }

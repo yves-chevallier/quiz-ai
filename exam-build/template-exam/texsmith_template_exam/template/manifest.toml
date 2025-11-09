@@ -1,0 +1,160 @@
+[compat]
+texsmith = ">=0.1,<1.0"
+
+[latex.template]
+name = "exam"
+version = "0.1.0"
+entrypoint = "template/template.tex"
+engine = "lualatex"
+shell_escape = true
+texlive_year = 2023
+tlmgr_packages = [
+    "babel",
+    "bookmark",
+    "bashful",
+    "booktabs",
+    "circuitikz",
+    "exam",
+    "fontspec",
+    "geometry",
+    "graphicx",
+    "hyperref",
+    "listings",
+    "mdframed",
+    "minted",
+    "multicol",
+    "realboxes",
+    "regexpatch",
+    "tabularx",
+    "ragged2e",
+    "tikz",
+    "tikzpagenodes",
+    "tcolorbox",
+    "xcolor",
+    "xfrac",
+    "xparse",
+    "zref",
+]
+override = ["heading.tex", "callout.tex", "choices.tex"]
+
+[latex.template.attributes.base_level]
+default = 1
+type = "integer"
+
+[latex.template.attributes.title]
+default = "Travail écrit"
+type = "string"
+escape = "latex"
+sources = ["press.title", "title"]
+
+[latex.template.attributes.subtitle]
+default = ""
+type = "string"
+escape = "latex"
+sources = ["press.subtitle", "subtitle"]
+
+[latex.template.attributes.author]
+default = "Prof. Yves Chevallier"
+type = "string"
+escape = "latex"
+sources = ["press.author", "press.authors", "author"]
+
+[latex.template.attributes.department]
+default = "Département TIN"
+type = "string"
+escape = "latex"
+sources = ["press.department"]
+
+[latex.template.attributes.school]
+default = "HEIG-VD"
+type = "string"
+escape = "latex"
+sources = ["press.school"]
+
+[latex.template.attributes.date]
+default = "\\today"
+type = "string"
+escape = "latex"
+sources = ["press.date", "date"]
+
+[latex.template.attributes.language]
+default = "french"
+type = "string"
+normaliser = "babel_language"
+sources = ["press.language", "language"]
+
+[latex.template.attributes.paper]
+default = "a4paper"
+type = "string"
+normaliser = "paper_option"
+sources = ["press.paper", "paper"]
+
+[latex.template.attributes.pointsize]
+default = "11pt"
+type = "string"
+sources = ["press.pointsize", "pointsize"]
+
+[latex.template.attributes.cover_notice]
+default = ""
+type = "string"
+escape = "latex"
+sources = ["press.cover_notice"]
+
+[latex.template.attributes.course]
+default = ""
+type = "string"
+escape = "latex"
+sources = ["press.course"]
+
+[latex.template.attributes.session]
+default = ""
+type = "string"
+escape = "latex"
+sources = ["press.session"]
+
+[latex.template.attributes.duration]
+default = ""
+type = "string"
+escape = "latex"
+sources = ["press.duration"]
+
+[latex.template.attributes.room]
+default = ""
+type = "string"
+escape = "latex"
+sources = ["press.room"]
+
+[latex.template.attributes.seed]
+default = ""
+type = "string"
+escape = "latex"
+sources = ["press.seed"]
+
+[latex.template.attributes.version]
+default = ""
+type = "string"
+escape = "latex"
+sources = ["press.version"]
+
+[latex.template.attributes.directives]
+default = []
+type = "list"
+sources = ["press.directives", "directives"]
+
+[latex.template.attributes.show_gradetable]
+default = true
+type = "boolean"
+sources = ["press.show_gradetable"]
+
+[latex.template.assets."hexam.sty"]
+source = "template/hexam.sty"
+
+[latex.template.assets."heiglogo.sty"]
+source = "template/heiglogo.sty"
+
+[latex.template.assets."exam.cls"]
+source = "template/exam.cls"
+
+[latex.template.slots.mainmatter]
+default = true
+depth = "section"
