@@ -85,6 +85,16 @@ in
 \setlength{\parskip}{1em}
 
 \definecolor{GitHubGray}{rgb}{0.9,0.9,0.9}
+\definecolor{HexamSolutionColor}{RGB}{155,0,0}
+
+\newcommand{\hexamSolutionStyle}{\color{HexamSolutionColor}}
+\newcommand{\hexamSolutionSetup}{%
+  \hexamSolutionStyle
+}
+
+\unframedsolutions
+\renewcommand{\solutiontitle}{}
+\SolutionEmphasis{\hexamSolutionSetup}
 
 \lstset{
   language=python,
@@ -152,12 +162,39 @@ in
     boxrule=0pt, bottomrule=0pt, toprule=0pt, leftrule=0pt, rightrule=0pt]{{\lstinline{#1}}}%
 }
 
+\makeatletter
+\def\@fillin@relay[#1]{%
+  \leavevmode
+  \ifprintanswers
+    \rlap{\raise -\answerclearance \hbox to #1{\hrulefill}}%
+    \begingroup
+      \setbox0 \hbox{\color@begingroup
+        \CorrectChoice@Emphasis \hexamSolutionStyle \fillin@ans \color@endgroup}%
+      \ifdim\wd0 > #1\relax
+        \hbox{\color@begingroup
+          \CorrectChoice@Emphasis \hexamSolutionStyle \fillin@ans \color@endgroup}%
+      \else
+        \hbox to #1{\color@begingroup
+          \CorrectChoice@Emphasis \hexamSolutionStyle \hfil \fillin@ans \hfil \color@endgroup}%
+      \fi
+    \endgroup
+  \else
+    \raise -\answerclearance \hbox to #1{\hrulefill}%
+  \fi
+}
+\makeatother
+
 \NewTotalTCBox{\CD}{v}{verbatim,boxsep=1pt, left=1pt, right=1pt, top=1pt, bottom=1pt,arc=1pt, outer arc=2pt,colframe=GitHubGray,colback=GitHubGray}{\lstinline[]^#1^}
 
+\makeatletter
+\providecommand{\@school}{}
+\providecommand{\@department}{}
+\makeatother
 \DeclareRobustCommand*\school[1]{\gdef\@school{#1}}
 \DeclareRobustCommand*\department[1]{\gdef\@department{#1}}
 
-\def\@maketitle{%
+\makeatletter
+\newcommand{\HexamCoverPage}{%
   \newpage
 
 \makebox[\textwidth][r]{%
@@ -193,7 +230,9 @@ in
       {\large \@date}%
   \end{center}%
   \par
-  \vskip 1.5em}
+\vskip 1.5em}
+\let\@maketitle\HexamCoverPage
+\makeatother
 
 
 %% Question format
@@ -226,8 +265,10 @@ in
 
 \pagestyle{headandfoot}
 
+\makeatletter
 \firstpageheader{\@title}{}{}
 \runningheader{\@title}
+\makeatother
 {}
 {}
 

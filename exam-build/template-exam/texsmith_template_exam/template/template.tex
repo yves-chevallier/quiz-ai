@@ -29,6 +29,7 @@
 
 \makeatletter
 \input{hexam.sty}
+\makeatletter
 
 \geometry{a4paper, total={165mm,250mm}}
 
@@ -68,6 +69,12 @@
 
 \newcommand{\titlequestion}{\titledquestion}
 
+\BLOCK{ if answers }
+\printanswers
+\BLOCK{ else }
+\noprintanswers
+\BLOCK{ endif }
+
 \title{\VAR{title|latex_escape}\BLOCK{ if subtitle }\\\large \VAR{subtitle|latex_escape}\BLOCK{ endif }}
 \author{\VAR{author|latex_escape}}
 \department{\VAR{department|latex_escape}}
@@ -78,25 +85,13 @@
 
 \thispagestyle{empty}
 \begin{coverpages}
-  \maketitle
+  \HexamCoverPage
   \thispagestyle{empty}
 
   \BLOCK{ if cover_notice }
   \begin{center}
     \noindent\VAR{cover_notice|latex_escape}
   \end{center}
-  \BLOCK{ endif }
-
-  \BLOCK{ if directives }
-  \vspace{1em}
-  \fbox{\fbox{\parbox{5.5in}{
-    \textbf{Consignes~:}\vspace{0.5em}%
-    \begin{itemize}
-    \BLOCK{ for directive in directives }
-      \item \VAR{directive|latex_escape}
-    \BLOCK{ endfor }
-    \end{itemize}
-  }}}
   \BLOCK{ endif }
 
   \BLOCK{ if show_gradetable }
@@ -111,6 +106,23 @@
     \makeatother
   \end{center}
   \BLOCK{ endif }
+
+  \BLOCK{ if directives }
+  \begin{center}
+  \vspace{1em}
+  \fbox{\fbox{\parbox{5.5in}{
+    \textbf{Consignes~:}\vspace{0.5em}%
+    \begin{itemize}
+    \BLOCK{ for directive in directives }
+      \item \VAR{directive|latex_escape}
+    \BLOCK{ endfor }
+    \end{itemize}
+    }}}
+    \end{center}
+  \BLOCK{ endif }
+
+
+
 \end{coverpages}
 
 \setcounter{page}{2}

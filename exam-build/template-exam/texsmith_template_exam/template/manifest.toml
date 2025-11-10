@@ -146,6 +146,11 @@ default = true
 type = "boolean"
 sources = ["press.show_gradetable"]
 
+[latex.template.attributes.answers]
+default = false
+type = "boolean"
+sources = ["press.answers", "answers"]
+
 [latex.template.assets."hexam.sty"]
 source = "template/hexam.sty"
 
