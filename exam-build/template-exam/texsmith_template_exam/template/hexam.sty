@@ -92,6 +92,16 @@ in
   \hexamSolutionStyle
 }
 
+\newlength{\HexamAnswerAbove}
+\newlength{\HexamAnswerBelow}
+\setlength{\HexamAnswerAbove}{9mm}
+\setlength{\HexamAnswerBelow}{1mm}
+\newcommand{\HexamAnswerStrut}{%
+  \rule[-\HexamAnswerBelow]{0pt}{\dimexpr\HexamAnswerAbove+\HexamAnswerBelow\relax}%
+}
+\setlength{\linefillheight}{\dimexpr\HexamAnswerAbove+\HexamAnswerBelow\relax}
+\setlength{\dottedlinefillheight}{\dimexpr\HexamAnswerAbove+\HexamAnswerBelow\relax}
+
 \unframedsolutions
 \renewcommand{\solutiontitle}{}
 \SolutionEmphasis{\hexamSolutionSetup}
@@ -165,6 +175,7 @@ in
 \makeatletter
 \def\@fillin@relay[#1]{%
   \leavevmode
+  \HexamAnswerStrut
   \ifprintanswers
     \rlap{\raise -\answerclearance \hbox to #1{\dotfill}}%
     \begingroup
@@ -182,6 +193,13 @@ in
     \raise -\answerclearance \hbox to #1{\dotfill}%
   \fi
 }
+\makeatother
+
+\makeatletter
+\xpatchcmd{\do@fillwithdottedlines}
+  {\vrule height \dottedlinefillheight depth \z@ width \z@}
+  {\vrule height \HexamAnswerAbove depth \HexamAnswerBelow width \z@}
+  {}{}
 \makeatother
 
 \NewTotalTCBox{\CD}{v}{verbatim,boxsep=1pt, left=1pt, right=1pt, top=1pt, bottom=1pt,arc=1pt, outer arc=2pt,colframe=GitHubGray,colback=GitHubGray}{\lstinline[]^#1^}
