@@ -17,19 +17,19 @@ Quel est la capitale de la France ?
 
 ## Question ouverte
 
-Résoudre l'équation quadratique suivante: $ 3x^2 + 2x - 5C = 0 $, où les coefficients sont définis comme suit:
+Résoudre l'équation quadratique suivante: $3x^2 + 2x - 5C = 0$, où les coefficients sont définis comme suit:
 
 Indiquer les solutions $x_1$ et $x_2$ ci-dessous:
 
 --- 1 ---
 
-!!! solution
+!!! solution {lines=2}
 
-    La solution de l'équation quadratique $ Ax^2 + Bx + C = 0 $ est donnée par la formule:
+    La solution de l'équation quadratique $Ax^2 + Bx + C = 0$ est donnée par la formule:
 
     $$ x = \frac{-B \pm \sqrt{B^2 - 4AC}}{2A} $$
 
-    En substituant les valeurs de $ A = 3 $, $ B = 2 $, et $ C = -5 $ dans la formule, nous obtenons:
+    En substituant les valeurs de $A = 3$, $B = 2$, et $C = -5$ dans la formule, nous obtenons:
 
     $$ x = \frac{-2 \pm \sqrt{2^2 - 4 \cdot 3 \cdot (-5)}}{2 \cdot 3} $$
 
@@ -53,7 +53,7 @@ Indiquer les solutions $x_1$ et $x_2$ ci-dessous:
 
         $$ x_2 = \frac{-2 - 8}{6} = \frac{-10}{6} = -\frac{5}{3} $$
 
-    Donc les solutions sont $ x_1 = 1 $ et $ x_2 = -\frac{5}{3} $.
+    Donc les solutions sont $x_1 = 1 $ et $ x_2 = -\frac{5}{3}$.
 
 ## Fill in the blanks
 
@@ -67,7 +67,10 @@ La Terre est la {{ cinquième }} planète à partir du {{ Soleil }} dans le syst
 
 Quelle est la formule chimique de l'eau ?
 
---- 2 ---
+!!! solution {lines=2}
+
+    La formule chimique de l'eau est H₂O.
+
 
 ### Partie B
 

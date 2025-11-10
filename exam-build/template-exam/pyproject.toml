@@ -20,6 +20,7 @@ Homepage = "https://github.com/yves-chevallier/texsmith"
 
 [project.entry-points."texsmith.templates"]
 exam = "texsmith_template_exam:Template"
+texsmith-template-exam = "texsmith_template_exam:Template"
 
 [project.entry-points."texsmith.renderers"]
 texsmith_exam = "texsmith_template_exam.renderer:register"

@@ -9,6 +9,11 @@ from typing import Any, Mapping, Sequence
 from texsmith.adapters import markdown as md  # noqa: F401 - side-effected import
 from texsmith.core.templates import TemplateError, WrappableTemplate
 
+from .constants import (
+    SOLUTION_LINES_SENTINEL_PREFIX,
+    SOLUTION_LINES_SENTINEL_SUFFIX,
+)
+
 
 _PACKAGE_ROOT = Path(__file__).parent.resolve()
 _EXTENSION_ID = "texsmith_template_exam.markdown:ExamSpecialsExtension"
@@ -20,10 +25,28 @@ LINE_PATTERN = re.compile(
     r"(?P<prefix>\s*)(?:—|---)\s*(?:(grid)\s+)?(?P<count>\d+)\s*(?:—|---)(?P<suffix>\s*)"
 )
 FILLIN_PATTERN = re.compile(r"\\\{\\\{\s*([^{}]+?)\s*\\\}\\\}")
+SOLUTION_SENTINEL_PATTERN = re.compile(
+    r"\s*"
+    + re.escape(SOLUTION_LINES_SENTINEL_PREFIX)
+    + r"(?P<value>\d+)"
+    + re.escape(SOLUTION_LINES_SENTINEL_SUFFIX)
+    + r"\s*(?:\r?\n)?",
+    re.MULTILINE,
+)
+SOLUTION_BLOCK_PATTERN = re.compile(r"\\begin{solution}(?P<body>.*?)\\end{solution}", re.DOTALL)
 
 
 class Template(WrappableTemplate):
     """Expose the exam template as a wrappable instance."""
+
+    _PART_COMMANDS: tuple[str, ...] = ("\\part", "\\subpart", "\\subsubpart")
+    _QUESTION_STARTS: tuple[str, ...] = (
+        "\\titlequestion",
+        "\\bonustitledquestion",
+        "\\question",
+        "\\bonusquestion",
+    )
+    _QUESTION_ENDS: tuple[str, ...] = ("\\end{questions}",)
 
     _METADATA_FIELDS: tuple[tuple[str, str], ...] = (
         ("Cours", "course"),
@@ -158,6 +181,64 @@ class Template(WrappableTemplate):
 
         updated = LINE_PATTERN.sub(replace_line, latex_body)
         updated = FILLIN_PATTERN.sub(replace_fillin, updated)
+        updated = self._ensure_parts_environments(updated)
+        updated = self._convert_solution_environments(updated)
         return updated
+
+    def _ensure_parts_environments(self, latex_body: str) -> str:
+        lines = latex_body.splitlines()
+        parts_open = False
+        output: list[str] = []
+        for line in lines:
+            stripped = line.lstrip()
+            if stripped.startswith("\\begin{parts}"):
+                parts_open = True
+                output.append(line)
+                continue
+            if stripped.startswith("\\end{parts}"):
+                parts_open = False
+                output.append(line)
+                continue
+            if parts_open and (
+                self._starts_with_any(stripped, self._QUESTION_STARTS)
+                or stripped.startswith(self._QUESTION_ENDS)
+            ):
+                output.append("\\end{parts}")
+                parts_open = False
+            if self._starts_with_any(stripped, self._PART_COMMANDS):
+                if not parts_open:
+                    output.append("\\begin{parts}")
+                    parts_open = True
+            output.append(line)
+        if parts_open:
+            output.append("\\end{parts}")
+        return "\n".join(output)
+
+    def _convert_solution_environments(self, latex_body: str) -> str:
+        def replace_block(match: re.Match[str]) -> str:
+            body = match.group("body")
+            sentinel = SOLUTION_SENTINEL_PATTERN.search(body)
+            if not sentinel:
+                return match.group(0)
+            value = sentinel.group("value")
+            stripped_body = SOLUTION_SENTINEL_PATTERN.sub("", body, count=1)
+            stripped_body = stripped_body.lstrip("\n")
+            filler = f"\\dimexpr {value}\\linefillheight\\relax"
+            prefix = "\n" if stripped_body and not stripped_body.startswith("\n") else ""
+            return f"\\begin{{solutionordottedlines}}[{filler}]{prefix}{stripped_body}\\end{{solutionordottedlines}}"
+
+        return SOLUTION_BLOCK_PATTERN.sub(replace_block, latex_body)
+
+    @staticmethod
+    def _starts_with_any(text: str, commands: tuple[str, ...]) -> bool:
+        for command in commands:
+            if not text.startswith(command):
+                continue
+            if len(text) == len(command):
+                return True
+            next_char = text[len(command)]
+            if not next_char.isalpha():
+                return True
+        return False
 
 __all__ = ["Template"]

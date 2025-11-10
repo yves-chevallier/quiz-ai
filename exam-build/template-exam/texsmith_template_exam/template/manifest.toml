@@ -152,9 +152,6 @@ source = "template/hexam.sty"
 [latex.template.assets."heiglogo.sty"]
 source = "template/heiglogo.sty"
 
-[latex.template.assets."exam.cls"]
-source = "template/exam.cls"
-
 [latex.template.slots.mainmatter]
 default = true
 depth = "section"

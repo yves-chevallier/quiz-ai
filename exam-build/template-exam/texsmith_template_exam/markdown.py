@@ -6,52 +6,52 @@ import re
 from xml.etree import ElementTree as etree
 
 from markdown import Extension
-from markdown.inlinepatterns import InlineProcessor
 from markdown.preprocessors import Preprocessor
 
+from .constants import (
+    SOLUTION_LINES_SENTINEL_PREFIX,
+    SOLUTION_LINES_SENTINEL_SUFFIX,
+)
 
-class ExamFillPreprocessor(Preprocessor):
-    """Replace `--- n ---` shorthands by explicit markers."""
 
-    pattern = re.compile(r"^\s*---\s*(?:(grid)\s+)?(\d+)\s*---\s*$", re.IGNORECASE)
+class ExamSolutionMetadata(Preprocessor):
+    """Capture solution callout metadata such as dotted line counts."""
+
+    pattern = re.compile(r"^(?P<indent>\s*)!!!\s+(?P<kind>[A-Za-z0-9_-]+)(?P<rest>.*)$")
+    lines_pattern = re.compile(r"lines\s*=\s*(?P<value>\d+)", re.IGNORECASE)
 
     def run(self, lines: list[str]) -> list[str]:
         output: list[str] = []
         for line in lines:
             match = self.pattern.match(line)
-            if not match:
+            if not match or match.group("kind").lower() != "solution":
                 output.append(line)
                 continue
-            kind = "grid" if match.group(1) else "lines"
-            count = match.group(2)
-            output.append(f'<exam-fill data-kind="{kind}" data-count="{count}"></exam-fill>')
+
+            rest = match.group("rest") or ""
+            value_match = self.lines_pattern.search(rest)
+            if not value_match:
+                output.append(line)
+                continue
+
+            value = value_match.group("value")
+            rest_without = self.lines_pattern.sub("", rest, count=1)
+            rest_without = re.sub(r"\{\s*\}", "", rest_without)
+            rest_without = rest_without.rstrip()
+
+            normalized = f"{match.group('indent')}!!! {match.group('kind')}{rest_without}"
+            output.append(normalized)
+
+            sentinel = f"{SOLUTION_LINES_SENTINEL_PREFIX}{value}{SOLUTION_LINES_SENTINEL_SUFFIX}"
+            output.append(f"{match.group('indent')}    {sentinel}")
         return output
-
-
-class ExamFillinPattern(InlineProcessor):
-    """Convert `{{answer}}` tokens into inline markers."""
-
-    def handleMatch(  # type: ignore[override]
-        self,
-        m: re.Match[str],
-        data: str,
-    ) -> tuple[etree.Element | None, int | None, int | None]:
-        value = (m.group(1) or "").strip()
-        if not value:
-            return None, None, None
-        node = etree.Element("exam-fillin")
-        node.set("data-value", value)
-        return node, m.start(0), m.end(0)
 
 
 class ExamSpecialsExtension(Extension):
     """Register the Markdown processors enabling the shorthand syntax."""
 
-    fillin_pattern = r"\{\{([^{}]+)\}\}"
-
     def extendMarkdown(self, md):  # type: ignore[override]
-        md.preprocessors.register(ExamFillPreprocessor(md), "exam_fill_blocks", 26)
-        md.inlinePatterns.register(ExamFillinPattern(self.fillin_pattern, md), "exam_fillin", 175)
+        md.preprocessors.register(ExamSolutionMetadata(md), "exam_solution_metadata", 25)
 
 
 def makeExtension(**_kwargs):
