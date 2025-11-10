@@ -166,7 +166,7 @@ in
 \def\@fillin@relay[#1]{%
   \leavevmode
   \ifprintanswers
-    \rlap{\raise -\answerclearance \hbox to #1{\hrulefill}}%
+    \rlap{\raise -\answerclearance \hbox to #1{\dotfill}}%
     \begingroup
       \setbox0 \hbox{\color@begingroup
         \CorrectChoice@Emphasis \hexamSolutionStyle \fillin@ans \color@endgroup}%
@@ -179,7 +179,7 @@ in
       \fi
     \endgroup
   \else
-    \raise -\answerclearance \hbox to #1{\hrulefill}%
+    \raise -\answerclearance \hbox to #1{\dotfill}%
   \fi
 }
 \makeatother
@@ -266,11 +266,9 @@ in
 \pagestyle{headandfoot}
 
 \makeatletter
-\firstpageheader{\@title}{}{}
-\runningheader{\@title}
+\firstpageheader{}{}{}
+\runningheader{}{}{}
 \makeatother
-{}
-{}
 
 \footer{Problème \thequestion}
 {Page \thepage\ sur \numpages}

@@ -146,6 +146,11 @@ default = true
 type = "boolean"
 sources = ["press.show_gradetable"]
 
+[latex.template.attributes.title_questions]
+default = false
+type = "boolean"
+sources = ["press.title_questions", "title_questions"]
+
 [latex.template.attributes.answers]
 default = false
 type = "boolean"

@@ -68,6 +68,8 @@
 \definecolor{FillWithDottedLinesColor}{gray}{0.5}
 
 \newcommand{\titlequestion}{\titledquestion}
+\newlength{\HexamDefaultLabelSep}
+\setlength{\HexamDefaultLabelSep}{\labelsep}
 
 \BLOCK{ if answers }
 \printanswers
@@ -127,7 +129,45 @@
 
 \setcounter{page}{2}
 
+\BLOCK{ if title_questions }
+\qformat{%
+  \parbox{\linewidth}{%
+    \large\bfseries Problème~\thequestion~--~\thequestiontitle\hfill\strut\\[0.6\baselineskip]%
+  }%
+}
+\renewcommand{\questionshook}{%
+  \setlength{\leftmargin}{0pt}%
+  \setlength{\labelwidth}{0pt}%
+  \setlength{\labelsep}{0pt}%
+}
+\let\HexamOldEnumerate\enumerate
+\let\HexamOldEndEnumerate\endenumerate
+\renewenvironment{enumerate}{%
+  \setlength{\labelsep}{\HexamDefaultLabelSep}%
+  \HexamOldEnumerate
+}{%
+  \HexamOldEndEnumerate
+}
+\let\HexamOldItemize\itemize
+\let\HexamOldEndItemize\enditemize
+\renewenvironment{itemize}{%
+  \setlength{\labelsep}{\HexamDefaultLabelSep}%
+  \HexamOldItemize
+}{%
+  \HexamOldEndItemize
+}
+\let\HexamOldDescription\description
+\let\HexamOldEndDescription\enddescription
+\renewenvironment{description}{%
+  \setlength{\labelsep}{\HexamDefaultLabelSep}%
+  \HexamOldDescription
+}{%
+  \HexamOldEndDescription
+}
+\BLOCK{ endif }
+
 \begin{questions}
+\thispagestyle{headandfoot}
 \VAR{mainmatter}
 \end{questions}
 

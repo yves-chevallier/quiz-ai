@@ -39,7 +39,21 @@ SOLUTION_BLOCK_PATTERN = re.compile(r"\\begin{solution}(?P<body>.*?)\\end{soluti
 class Template(WrappableTemplate):
     """Expose the exam template as a wrappable instance."""
 
-    _PART_COMMANDS: tuple[str, ...] = ("\\part", "\\subpart", "\\subsubpart")
+    _LEVELLED_COMMANDS: tuple[tuple[str, str], ...] = (
+        ("\\part", "parts"),
+        ("\\subpart", "subparts"),
+        ("\\subsubpart", "subsubparts"),
+    )
+    _COMMAND_TO_LEVEL = {cmd: idx for idx, (cmd, _env) in enumerate(_LEVELLED_COMMANDS)}
+    _LEVEL_TO_ENV = {idx: env for idx, (_cmd, env) in enumerate(_LEVELLED_COMMANDS)}
+    _ENV_TO_LEVEL = {env: idx for idx, env in _LEVEL_TO_ENV.items()}
+    _QUESTION_STARTS: tuple[str, ...] = (
+        "\\titlequestion",
+        "\\bonustitledquestion",
+        "\\question",
+        "\\bonusquestion",
+    )
+    _QUESTION_ENDS: tuple[str, ...] = ("\\end{questions}",)
     _QUESTION_STARTS: tuple[str, ...] = (
         "\\titlequestion",
         "\\bonustitledquestion",
@@ -187,31 +201,79 @@ class Template(WrappableTemplate):
 
     def _ensure_parts_environments(self, latex_body: str) -> str:
         lines = latex_body.splitlines()
-        parts_open = False
         output: list[str] = []
-        for line in lines:
-            stripped = line.lstrip()
-            if stripped.startswith("\\begin{parts}"):
-                parts_open = True
-                output.append(line)
+        open_stack: list[tuple[int, bool]] = []  # (level, auto_opened)
+
+        def has_level(level: int) -> bool:
+            return any(entry[0] == level for entry in open_stack)
+
+        def auto_open(level: int) -> None:
+            env = self._LEVEL_TO_ENV[level]
+            output.append(f"\\begin{{{env}}}")
+            open_stack.append((level, True))
+
+        def close_auto_levels(min_level: int) -> None:
+            nonlocal open_stack
+            while open_stack and open_stack[-1][0] >= min_level and open_stack[-1][1]:
+                level, _ = open_stack.pop()
+                env = self._LEVEL_TO_ENV[level]
+                output.append(f"\\end{{{env}}}")
+
+        def close_all_auto() -> None:
+            close_auto_levels(0)
+
+        for raw_line in lines:
+
+            stripped = raw_line.lstrip()
+            manual_begin = None
+            manual_end = None
+            for env_name in self._ENV_TO_LEVEL:
+                if stripped.startswith(f"\\begin{{{env_name}}}"):
+                    manual_begin = env_name
+                    break
+                if stripped.startswith(f"\\end{{{env_name}}}"):
+                    manual_end = env_name
+                    break
+
+            if manual_begin:
+                level = self._ENV_TO_LEVEL[manual_begin]
+                open_stack.append((level, False))
+                output.append(raw_line)
                 continue
-            if stripped.startswith("\\end{parts}"):
-                parts_open = False
-                output.append(line)
+
+            if manual_end:
+                level = self._ENV_TO_LEVEL[manual_end]
+                # Pop until corresponding level is removed
+                while open_stack:
+                    lvl, auto = open_stack.pop()
+                    if auto:
+                        env = self._LEVEL_TO_ENV[lvl]
+                        output.append(f"\\end{{{env}}}")
+                    if lvl == level:
+                        break
+                output.append(raw_line)
                 continue
-            if parts_open and (
-                self._starts_with_any(stripped, self._QUESTION_STARTS)
-                or stripped.startswith(self._QUESTION_ENDS)
+
+            if self._starts_with_any(stripped, self._QUESTION_STARTS) or stripped.startswith(
+                self._QUESTION_ENDS
             ):
-                output.append("\\end{parts}")
-                parts_open = False
-            if self._starts_with_any(stripped, self._PART_COMMANDS):
-                if not parts_open:
-                    output.append("\\begin{parts}")
-                    parts_open = True
-            output.append(line)
-        if parts_open:
-            output.append("\\end{parts}")
+                close_all_auto()
+
+            command_level = None
+            for level_cmd in self._COMMAND_TO_LEVEL:
+                if stripped.startswith(level_cmd):
+                    command_level = self._COMMAND_TO_LEVEL[level_cmd]
+                    break
+
+            if command_level is not None:
+                close_auto_levels(command_level + 1)
+                for required_level in range(0, command_level + 1):
+                    if not has_level(required_level):
+                        auto_open(required_level)
+
+            output.append(raw_line)
+
+        close_all_auto()
         return "\n".join(output)
 
     def _convert_solution_environments(self, latex_body: str) -> str:

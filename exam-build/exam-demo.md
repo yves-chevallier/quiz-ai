@@ -70,45 +70,304 @@ Complétez le tableau ci-dessous en remplissant les cases vides.
 
 Pour chacun des identificateurs suivants, indiquez s'ils sont corrects selon le standard C. S'ils sont invalides, proposez un nom compatible en C (ASCII, lettres/chiffres et `_` uniquement).
 
-1. `résumé`
+#### `résumé`
 
-   !!! solution {lines=1}
+!!! solution {lines=1}
 
-       **Incorrect** (accent). Proposition : `resume` ou `summary`.
+    **Incorrect** (accent). Proposition : \texttt{resume} ou \texttt{summary}.
 
-2. `_AMountain_`
+#### `_AMountain_`
 
-    !!! solution {lines=1}
+!!! solution {lines=1}
 
-        **Correct**.
+    **Correct**.
 
-3. `while`
+#### `while`
 
-    !!! solution {lines=1}
+!!! solution {lines=1}
 
-        **Incorrect** car mot-clé réservé. Proposition : `case_value`, `while_loop`, etc.
+    **Incorrect** car mot-clé réservé. Proposition : \texttt{case\_value}, \texttt{while\_loop}, etc.
 
-4. `std99`
+#### `std99`
 
-    !!! solution {lines=1}
+!!! solution {lines=1}
 
-        **Correct**.
+    **Correct**.
 
-5. `data-stream`
+#### `data-stream`
 
-    !!! solution {lines=1}
+!!! solution {lines=1}
 
-        **Incorrect** (tiret). Proposition : `data_stream`.
+    **Incorrect** (tiret). Proposition : \texttt{data\_stream}.
 
-## Question à choix multiples
+### Constantes littérales
 
-Quel est la capitale de la France ?
+Pour chaque constante littérale suivante, indiquez si elle est **correcte** et,
+si applicable, précisez le **type** associé.
+
+#### `42uL`
+
+!!! solution {lines=1}
+
+    `42uL` : Correct, type `unsigned long int`.
+
+#### `0758`
+
+!!! solution {lines=1}
+
+    `0758` : Incorrect (les littéraux octaux n'acceptent pas 8 ou 9).
+
+#### `.128f`
+
+!!! solution {lines=1}
+
+    `.128f` : Correct, type `float`.
+
+#### `'\\x41'`
+
+!!! solution {lines=1}
+
+    `'\\x41'` : Correct, type `char`.
+
+#### `0b00001010`
+
+!!! solution {lines=1}
+
+    `0b00001010` : Correct à partir de C23 (`int`).
+
+/// latex
+\clearpage
+///
+
+/// latex
+\lstDeleteShortInline|
+///
+
+## Entrées sorties
+
+### Formatage avec `printf`
+
+Pour les appels de fonction `printf` suivants, indiquez l'affichage exact
+produit sur *stdout* ou, en cas d'erreur, la nature de cette dernière.
+Représentez la sortie dans l'espace approprié, un caractère par case.
+Utilisez la notation des caractères d'échappement du langage C pour
+les caractères non imprimables (p.ex. `\n`).
+Terminez chaque sortie par une croix sur toute la case.
+
+Considérez les états des variables suivants:
+
+```c
+short s = -27;
+unsigned char uc = 201;
+char c = 'c'; // Valeur ASCII de 'c': 99
+double x = 2.71828;
+```
+
+#### `printf("|0x%05x|\\n", uc);`
+
+!!! solution {lines=2}
+
+    \texttt{\textbar 0x000c9\textbar \textbackslash n}
+
+#### `printf("%+7.2f\\n", s / 2.0);`
+
+!!! solution {lines=2}
+
+    \texttt{\ \ -13.50\textbackslash n}
+
+#### `printf("%c%c%c%c %hhd", c, c - 2, 'a' + 2, 97, c);`
+
+!!! solution {lines=1}
+    \texttt{caca\ 99}
+
+#### `printf(">%-06.1f<", x);`
+
+!!! solution {lines=1}
+    \texttt{>0002.7<}
+
+#### `printf("%-*.*f%d\\n", 7, 3, 5.4321, 42);`
+
+!!! solution {lines=1}
+    \texttt{5.432\ \ 42}
+
+### Formatage avec `scanf`
+
+Soient les déclarations suivantes :
+
+```c
+int r = 0, n = 0, m = 0;
+double y = 0.0;
+char ch = '0';
+```
+
+Pour les appels `sscanf` ci-dessous, indiquez:
+
+1. la valeur des variables affectées;
+2. la valeur de retour de `r`.
+
+#### `r = sscanf("  -15 0x1f", "%d %i", &n, &m);`
+
+!!! solution {lines=1}
+
+    n = -15, m = 31, r = 2
+
+#### `r = sscanf("42kg", "%2d%c", &n, &ch);`
+
+!!! solution {lines=1}
+
+    n = 42, ch = 'k', r = 2
+
+#### `r = sscanf("0.75,12", "%lf,%d", &y, &n);`
+
+!!! solution {lines=1}
+
+    y = 0.75, n = 12, r = 2
+
+#### `r = sscanf("abc", "%d", &n);`
+
+!!! solution {lines=1}
+
+    n = 0, r = 0
+
+#### `r = sscanf("9.82", "%d %d", &n, &m);`
+
+!!! solution {lines=1}
+
+    n = 9, m = 82, r = 2
+
+/// latex
+\lstMakeShortInline|
+///
+
+/// latex
+\clearpage
+///
+
+## Boucles et contrôle de flux
+
+Donnez les valeurs affichées sur `stdout` pour chaque fragment de code C suivant :
+
+### Boucles simples
+
+```c
+int s = 1;
+while (s < 20) {
+    printf("%d ", s);
+    s <<= 1;
+}
+```
+
+!!! solution {lines=1}
+
+    `1 2 4 8 16 `
+
+### Boucles avec contrôle de flux
+
+```c
+for (int i = 5; i > 0; --i) {
+    if (i % 2 == 0) continue;
+    printf("%d", i);
+}
+```
+
+!!! solution {lines=1}
+
+    `531`
+
+### Boucles imbriquées
+
+```c
+int total = 0;
+for (int i = 1; i <= 3; ++i) {
+    for (int j = i; j <= 3; ++j) {
+        total += j;
+    }
+}
+printf("%d", total);
+```
+
+!!! solution {lines=1}
+
+    `18`
+
+### Boucles avec conditions
+
+```c
+int i = 1, t = 0;
+do {
+    t += i;
+    printf("%d;", t);
+    i += 2;
+} while (t < 15);
+```
+
+!!! solution {lines=1}
+
+    `1;4;9;16;`
+
+/// latex
+\clearpage
+///
+
+## Programmation
+
+Écrire un programme complet en C qui calcule la résistance équivalente d'un
+réseau de `N` résistances montées en parallèle, selon :
+
+$$
+R_{\mathrm{eq}} = \left(\frac{1}{R_1} + \frac{1}{R_2} + \cdots + \frac{1}{R_N}\right)^{-1}
+$$
+
+- Les valeurs sont fournies via les arguments de la ligne de commande (`argv[1..N]`).
+- Toute valeur manquante, nulle ou négative doit provoquer un message
+    d'erreur et un code de retour non nul.
+- Vous pouvez utiliser `sscanf` pour valider les entrées.
+
+Exemples d'exécution :
+
+```bash
+$ ./parallel 120 220 330
+54.6796
+$ ./parallel 100 100 100 100 100
+20.0
+$ ./parallel 47 -10 10
+Error: Invalid resistance values
+```
+
+/// latex
+\clearpage
+///
+
+## Quiz
+
+### Quel est la capitale de la France ?
 
 - [ ] Berlin
 - [ ] Madrid
 - [x] Paris
 - [ ] Rome
 - [ ] Lisbonne
+
+### Quel est le résultat de l'expression `5 + 3 * 2` en C ?
+
+- [ ] 16
+- [x] 21
+- [ ] 13
+- [ ] 10
+- [ ] 11
+
+### Quel est l'élément chimique dont le symbole est `Fe` ?
+
+- [ ] Fluor
+- [ ] Francium
+- [ ] Ferium
+- [ ] Fermium
+- [ ] Fermate
+- [x] Fer
+
+/// latex
+\clearpage
+///
 
 ## Question ouverte
 
